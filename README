@@ -1,17 +1,14 @@
-
                                   PWF
                         (A Python Web Framework)
 
-
 - What is it?
 PWF is a super minimalistic framework speaking WSGI. It's intended for
-building simple APIs or quick prototyping. It's for the people who want
-to be able to look at and understand all the code in 30 minutes. It's
-for taking care of the very basics and leaving the rest up to you.
+building simple APIs or quick prototyping. It's for taking care of the 
+very basics and leaving the rest up to you.
 
 PWF was made to build lightweight REST APIs focusing on returning
 and recieving JSON. It does not and will not feature any server
-side templating, blueprints, session management or things like tat. 
+side templating, blueprints, session management etc. 
 
 JSON, text, headers, cookies and response codes. Simple as that. 
 
