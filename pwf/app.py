@@ -12,9 +12,9 @@ from functools import wraps
 
 
 class Pwf(object):
-    """The Pwf objects handles the interactions between the view functions and
-    the WSGI application. It is instanciated once and you then interact with that
-    instance to define routes, change configurations and more.
+    """This is the central object you instantiate and interact with in your
+    program. Once created it can be used in the view to access things
+    like cookies, headers, response codes etc.
 
     Example usage to define a view:
     
@@ -25,8 +25,8 @@ class Pwf(object):
                 return 'Hello world'
 
 
-    The above example instantiates the Pwf obhects, defines a route to '/'
-    through the app.routes decorater and returns 'Hello World' from the
+    The above example instantiates the Pwf object, defines a route to '/'
+    through the app.routes decorator and returns 'Hello World' from the
     view function.
     """
     
@@ -34,10 +34,14 @@ class Pwf(object):
         self.routes = []
 
     def build_route_pattern(self, url):
+        """Regex to find path variables in path"""
         route_regex = re.sub(r'(<\w+>)', r'(?P\1.+)', url)
         return re.compile("^{}$".format(route_regex))
 
     def get_route_match(self, path):
+        """Match a path to an entry in self.routes and return variables,
+        supported methods and view function
+        """
         for route_pattern, methods, view_function in self.routes:
             m = route_pattern.match(path)
             if m:
@@ -47,15 +51,16 @@ class Pwf(object):
 
     def route(self, url, methods=['GET']):
         """This function is used as a decorator for each view function
-        to define the route/url associated with that view.
+        to define the route associated with that view.
         
         Example:
             @app.route('/profile')
             def profile(request):
                 return 'This is the profile page'
 
-        It adds the url along with the function itself in the self.routes
-        dictionary for the path_dispatcher to user.
+        It adds the path along with the view function itself, the request
+        method and any route variables to self.routes for the path_dispatcher
+        to user.
         """
 
         def decorate(f):
@@ -70,17 +75,22 @@ class Pwf(object):
         return decorate
 
     def path_dispatch(self, request, make_response):
-        """Gets the requested url path from the headers and
-        matches it to a url, function and method stored in self.routes.
-
+        """Gets the requested path from the headers and
+        matches it to a route, function and method stored in self.routes.
         The view funtion itself then gets executed to generate the
-        response-data and we build a Response object from it.
+        response-data.
+
+        If the view function returns a Response object (The Response
+        object was created in the view) we attach the make_response
+        to it. 
+
+        If the view function return is standard data (and headers)
+        we create the Response object here.
 
         If the requested path is not found in self.routes or the
-        request method used in not supported by the view we return
-        an error Response object. 
+        request method used is not supported by the view we return
+        an error Response object.
         """
-
         path = request.headers['PATH_INFO']
         method = request.headers['REQUEST_METHOD']
 
@@ -108,9 +118,8 @@ class Pwf(object):
 
     def dispatch_request(self, environ, make_response):
         """Instantiate a new Request object based on environ,
-        pass it to the path dispatcher to get the response instance
+        pass it to the path dispatcher to get the response instance.
         """
-
         request = Request(environ)
         response = self.path_dispatch(request, make_response)
         return response
@@ -120,7 +129,6 @@ class Pwf(object):
         a response object. This can then be used to add cookies,
         headers and more.
         """
-
         response = Response(data=data)
         return response
 
@@ -128,13 +136,12 @@ class Pwf(object):
         """Gets executed every time an instance of the class
         gets called. 
         
-        Calls dispatch_request with the standard WSGI varables
+        Calls dispatch_request with the standard WSGI objects
         environ and make_request to get back a response.
 
         It then calls render() on the response to render it 
         back to the server.
         """
-
         resp = self.dispatch_request(environ, make_response)
         return resp.render()
 

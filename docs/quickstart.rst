@@ -1,29 +1,30 @@
 .. _quickstart
 
-PWD Quickstart Guide
+PWF Quickstart Guide
 ====================
 
 This guide explains how to get started with pwd. It only covers interacting
-with the PWD library, integration with uwsgi and nginx are covered in the 
-"Hook things up" guide.
+with the PWF library, integration with uwsgi and nginx are covered in another
+chapter.
 
-If you are familiar with using Flask and to some extent even web.py you will
-without doubt see how similar the interaction with PWD is to those frameworks. 
-This is very intentional. There are however some small details that differ
-so make sure to glance over the basics.
+If you are familiar with Flask and to some extent even Web.py you will
+without doubt see many similarities in how you interacti with PWF and those
+frameworks. This is intentional. There are however some aspects that differ
+so make sure to read through the guide.
 
 DISCLAIMER: Even though it looks very similar to Flask on the surface this
-does not mean that you will be able to expect that the same features are 
-availabel to you. Please read the README file for what PWD is and what it is not.
+does not mean that you will be able to expect the same features in PWF.
+Please read the README file for what PWD is and what it is not.
 
 
 The simplest case
 -----------------
 
-Perhaps the most basic thing you can do with PWD is to recive a GET request
-and return some text. For this, all you need is five lines of code ::
+The most basic thing you can do with PWF is to recive a GET request
+and return some text back to the user. For this, all you need is
+five lines of code: ::
     
-    from pwd.app import App()
+    from pwf.app import App()
     app = App()
 
     @app.route('/')
@@ -31,14 +32,11 @@ and return some text. For this, all you need is five lines of code ::
         return 'Hello World'
 
 
-First we imported the App() object from pwd.app and created a new instance of
-it named "app". This app object is what we use to interact with PWD.
-
-After that we used the @app.route() decorator and passed it a route to use
-(in this case just '/' for the root path). The function we decorated, called 
-"index" in this example will be responsible for whatever we want to do with the
-request before we return a response to the server. In this case the only thing it
-does is to return the string 'Hello World'.
+First we import the App() object from pwf.app and create a new instance of
+it named "app". After that we use the @app.route() decorator and pass it a
+route to use (in this case just '/' for the root path). The function we
+decorate, called "index" is responsible for generating the data we want
+to return back to the user, in this case the string 'Hello World'. 
 
 
 Basic Routing
@@ -46,7 +44,7 @@ Basic Routing
 
 Now let's take a look at routing and the @app.route decorator in a bit more
 detail. In the previous example we defined only one route with the '/' URL. Next
-we'll declare some more routes with different paths ::
+we'll declare some more routes with different paths: ::
 
     @app.route('/')
     def index(request):
@@ -63,22 +61,21 @@ we'll declare some more routes with different paths ::
         return 'This is the users page'
         
 
-So basically we can define as many routes as we like and associate each one
-with a function. As you might have noticed in the last example, the name of the
-url does not have to be the same as the function name, but it helps to keep
-things tidy. 
+We can define as many routes as we like and associate each one with a function.
+As you might have noticed in the last example, the name of the
+path does not have to be the same as the function name.
 
-This far we've only looked at static paths, but you can also use variable paths
-to pass specific data from the URL to your view function. This is done by encapsuling
-the path in "<" and ">", like so ::
+You can also use variable paths to pass specific data from the URL to your
+view function. This is done by encapsuling the variable part of the path
+in "<" and ">", like so: ::
     
     @app.route(/user/<username>)
     def user(request, username):
         return 'Welcome back %s' % username
 
 If you visit the url /user/walter the response will read "Welcome back walter".
-You don't need to have the variable at the end of the url and an url can contain
-multiple variables ::
+You don't need to have the variable at the end of the path and a path can contain
+multiple variable parts: ::
 
     @app.route(/user/<username>/profile/edit/<id>)
     def user(request, username, id):
@@ -90,18 +87,15 @@ multiple variables ::
 The view function
 -----------------
 
-The view function is the function you as the user define and the decorate with
-the route decorator. The job of this function is to do whatever work you need it
-to perform and return something back to the server. It could fetch some data from
-a database, do some computation or just return some basic data. 
+The view function is the function you as the user define for each route. The job
+of this function is to do whatever work you need perform and return something
+back to the server.
 
-As you might have seen we pass some arguments to these functions. the first one
-is the request argument that is injected by PWF and we'll get back to that one. 
-The others are the variables we defined in our url that need to be passed in 
-for us to use. 
+The view function requres you to pass in the request object and any variable
+you've defined in your path.
 
 Example of a view function that does some very basic work before returning
-a json object with some very useful data ::
+a JSON object with some very useful data: ::
     
     import json    
 
@@ -117,17 +111,16 @@ a json object with some very useful data ::
 Request methods
 ---------------
 
-By default a route defined in PWD only supports GET requests. That might feel
-a bit too limiting, so lets make it accept POSTs as well. To declare what
-methods are supported you add an additional argument to the @app.route decorator
-containing a list of methods. Like this ::
+By default a route defined in PWF only supports GET requests. To declare what
+methods are supported you add an additional argument to the @app.route
+decorator containing a list of methods: ::
 
     @app.route(/send, methods=['GET', 'POST'])
     def send(request):
         return 'Thanks!'
 
-Now this view supports both GET and POST requests. To handle the different
-request types you do the following ::
+Now this view supports both GET and POST requests. To handle them
+separately: ::
 
     @app.route('/send', methods=['GET', 'POST'])
     def send(request):
@@ -140,28 +133,28 @@ request types you do the following ::
 
 
 
-The request object
+The Request object
 ------------------
 
 In the example above we used the request object through request.method to
 check for POST or GET. The request object holds important information about
-the request that was made for you to use in your view function.
+the request that you can access in the view function.
 
 The request object always needs to be passed into the view function
-like this (althoug you can name it whatever you like) ::
+(althoug you can name it whatever you like). ::
     
     @app.route('/page1')
-    def page_one(request):
+    def page_one(r):
         return 'Hello page 1'
 
 
-Supported variables are:
+Supported methods for the request object are:
 
     - request.method:
-      Return the request method as a string (GET, POST, OPTIONS, PUT etc)
+      Return the request method as a string ('GET', 'POST', 'OPTIONS' etc)
 
     - request.headers:
-      Returns the request headers
+      Returns the request headers as a dictionary
 
     - request.query:
       Returns keys and values from a query string as a dictionary.
@@ -171,6 +164,63 @@ Supported variables are:
 
     - request.environ:
       Returns the raw WSGI environ dict.
+
+
+
+The Response object
+-------------------
+
+Just as there is a Request object PWF also has a Response object.
+In all the examples so far the Response object was created for us
+after we returned from the view function. But sometimes we want to
+modify it ourselves in the view.
+
+This might be to set some custom headers, change the status code or
+set a cookie.
+
+You can create a response object like this: ::
+
+    @app.route('/')
+    def index(request):
+        data = 'Hello World'
+        resp = app.make_response(data)
+        return resp
+
+We create the object by calling app.make_response() and passing it our
+return data. We then return the object itself from the view. 
+
+To set a custom header, add a cookie and specify the status code: ::
+    
+    @app.route('/')
+    def index(request):
+        data = 'Hello World'
+        resp = app.make_response(data, code=304) 
+        resp['X-Custom-Header'] = 'value'
+        resp.set_cookie('session', 'abcd1234')
+        return resp
+
+Here we define the response data and status code when we create the
+object by passing it to the make_response method, but we can also
+add it later. ::
+
+    @app.route('/')
+    def index(request):
+        resp = app.make_response()
+        resp.data = 'Hello Bacon'
+        resp.code = 304
+        return resp
+
+Supported methods for the response object:
+
+    - response.data
+
+    - response.headers
+
+    - response.set_cookie(key, value)
+
+    - response.code
+
+
 
 
 

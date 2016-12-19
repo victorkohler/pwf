@@ -18,10 +18,9 @@ class Request(object):
     """
 
     def __init__(self, environ):
-        """Set object variables that will then be accessible
+        """Set object variables that will be accessible
         in the view function.
         """
-
         self.environ = environ
         self.headers = self.__parse_headers(environ)
         self.query = self.__parse_query(environ)
@@ -33,7 +32,6 @@ class Request(object):
         """Get cookies from environ and return a dict with 
         keys and values.
         """
-
         parsed_cookies = {}
         cookies = Cookie.SimpleCookie(environ.get('HTTP_COOKIE', ''))
         for key in cookies:
@@ -43,10 +41,9 @@ class Request(object):
 
     def __parse_headers(self, environ):
         """We parse the headers from the WSGI environ and
-        return only the wanted ones defined in wanted_headers list.
-        We also pass along any HTTP headers
+        return only the wanted ones defined in wanted_headers list
+        plus any HTTP headers.
         """
-
         length = environ.get('CONTENT_LENGTH', 0)
         headers = { 'CONTENT_LENGTH': 0 if not length else int(length) }
 
@@ -61,16 +58,14 @@ class Request(object):
         return headers
 
     def __parse_method(self, environ):
-        """Return the current request method (GET, POST, PUTS, OPTIONS)"""
-
+        """Return the current request method as a string.
+        For example 'GET' or 'OPTIONS'
+        """
         request_method = environ['REQUEST_METHOD']
         return request_method
 
     def __parse_query(self, environ):
-        """Parse a query string into a dictionary. Dict keys are query 
-        variable names and values query values.
-        """
-
+        """Parse a query string into a dictionary."""
         query = urlparse.parse_qs(environ['QUERY_STRING'])
 
         # Only select the first value for any give query variable.
@@ -81,15 +76,13 @@ class Request(object):
     def __parse_data(self, environ):
         """Parse the request body data based on content type.
         
-        If the request is form data we use cgi.FieldStorage to parse
-        the data.
+        If the request is form data we use cgi.FieldStorage to parse it.
         
-        If its raw data (json, xml, javascript ect) we just read it from
-        environ[wsgi.input] and return it.
+        If it's raw data (json, xml, javascript ect) we just read it from
+        environ[wsgi.input] and return it as is.
         
         If no data is sent we return an empty dict.
         """
-
         content_type = environ['CONTENT_TYPE'].lower()
         data = {}
 
@@ -100,14 +93,12 @@ class Request(object):
             for k in env_data.list:
                 # check that the request is not "application/x-www-form-urlencoded"
                 # which will be a cgi.MiniFieldStorage object.
-
                 # NOTE: Perhaps add support for x-www-form in the future
                 if not isinstance(k, cgi.MiniFieldStorage):
                     if k.filename:
                          data[k.name] = k.file
                     else:
                         data[k.name] = k.value
-
             return data
         else:
             length = self.headers['CONTENT_LENGTH']

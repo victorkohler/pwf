@@ -17,5 +17,8 @@ It's not a full featured framework. It's not Django or Flask or Bottle.
 It's not for running in large scale production websites. Batteries are pruchased, 
 or manufactured separately.
 
+- Is it production ready?
+No.
+
 - What are some more seruous frameworks?
 Have a look at Flask, Django, Bottle, Falcon, Web2py or Web.py

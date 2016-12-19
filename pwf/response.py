@@ -9,34 +9,23 @@ import httplib
 import helpers
 
 class Response(object):
-    """ Response object is responsible for iterating the make_response and
-    returning the view data
+    """Used to set and return data back to the server. The Response object
+    can be instantiated in one of two ways:
 
-    :params code, the status code
-    :params data, the raw data rendered from the view
+    1. It is created manually in the view function to add custom headers, 
+    cookies or response codes.
+    
+    2. It gets created automatically once the view function returns
+    some data.
+
+    Create the response object from the view using app.make_response(data)
     """
 
     def __init__(self, make_response=None, code=200, data=''):
-        """The Response object can be instantiated in one of two ways.
-        Either it gets created manually in the view function by the user
-        to add custom headers, cookies or response codes.
-
-        Or it gets created automatically once the view function returns
-        some data.
-
-        To create the response object from the view and set a custom
-        header:
-
-            resp = app.make_response(data)
-            resp['x-custom-header'] = 'my-cookie'
-
-        For the view data we're currently supporting either a tuple with
-        both the returned data and a dictionary of headers OR just the 
+        """For the view data we're currently supporting either a tuple with
+        both the returned data and a dictionary of headers or just the 
         returned data.
-
-        Support for view defined status codes might come later.
         """
-
         if isinstance(data, tuple):
             self.data = data[0]
             headers = data[1]
@@ -49,22 +38,21 @@ class Response(object):
         self.make_response = make_response
 
     def set_cookie(self, key, value, path=None, expiration=None):
-        """Creates a cookie tuple and adds it to the headers.
-        This function is ment to be used in the view function like so:
+        """Creates a cookie dictionary and adds it to the headers.
+        This function is ment to be used in the view function:
         
             resp = make_response(data)
             resp.set_cookie('key', 'value')
         """
-
         cookie = helpers.create_cookie(key, value, path, expiration)
         self.headers.update(cookie)
 
     def render(self):
         """Renders the final response back to the server with status code,
-        headers and data. Transform headers and codes into WSGI compatible
-        format.
+        headers and data. It aslo transform headers and codes into
+        a WSGI compatible format.
         
-        If status code is 5xx or 4xx no view data is returned
+        If status code is 5xx or 4xx no view data is returned.
         """
 
         # If the content type is not specified, we set
