@@ -7,6 +7,7 @@
 
 import httplib
 import helpers
+import cookies
 
 class Response(object):
     """Used to set and return data back to the server. The Response object
@@ -37,14 +38,17 @@ class Response(object):
         self.code = code
         self.make_response = make_response
 
-    def set_cookie(self, key, value, path=None, expiration=None):
+    def set_cookie(self, key, value='', path='/', expires=None, max_age=None,
+                domain=None, secure=False, httponly=False):
         """Creates a cookie dictionary and adds it to the headers.
         This function is ment to be used in the view function:
         
             resp = make_response(data)
             resp.set_cookie('key', 'value')
         """
-        cookie = helpers.create_cookie(key, value, path, expiration)
+        cookie = cookies.create_cookie(key, value, path, expires, max_age,
+                domain, secure, httponly)
+
         self.headers.update(cookie)
 
     def render(self):

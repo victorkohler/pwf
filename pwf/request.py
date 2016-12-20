@@ -88,6 +88,8 @@ class Request(object):
 
         # If we're dealing with form data:
         if 'form' in content_type:
+            #keep_blank_values=True
+            #encoding = True
             env_data = cgi.FieldStorage(environ['wsgi.input'], environ=environ)
             
             for k in env_data.list:
