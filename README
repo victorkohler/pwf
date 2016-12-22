@@ -6,7 +6,7 @@ PWF is a super minimalistic framework speaking WSGI. It's intended for
 building simple APIs or quick prototyping. It's for taking care of the 
 very basics and leaving the rest up to you.
 
-PWF was made to build lightweight REST APIs focusing on returning
+PWF was made to build simple web APIs focusing on returning
 and recieving JSON. It does not and will not feature any server
 side templating, blueprints, session management etc. 
 
@@ -14,11 +14,11 @@ JSON, text, headers, cookies and response codes. Simple as that.
 
 - What is it not?
 It's not a full featured framework. It's not Django or Flask or Bottle.
-It's not for running in large scale production websites. Batteries are pruchased, 
-or manufactured separately.
+It's not for running in large scale production websites. Batteries are
+not included.
 
 - Is it production ready?
-No.
+Nope.
 
 - What are some more serious frameworks?
 Have a look at Flask, Django, Bottle, Falcon, Web2py or Web.py

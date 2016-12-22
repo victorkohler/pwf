@@ -3,6 +3,10 @@
 @author: Victor Kohler
 @since: date 18/12/2016
 @version: 0.1
+
+Tests covering the core functionality of cookies and functionality
+from pwf/cookies.py
+
 """
 
 import pytest
@@ -32,7 +36,6 @@ class TestCookieCreation(object):
 
         self.assert_cookie_args(cookie, self.expected_args)
 
-    
     def test_expire_string(self):
         expires_string = '1482357361'
         cookie = create_cookie(self.key, self.value, self.path, expires_string,
@@ -40,7 +43,6 @@ class TestCookieCreation(object):
 
         self.expected_args[0] = 'Expires=1482357361'
         self.assert_cookie_args(cookie, self.expected_args)
-
 
     def test_cookie_int(self):
         domain_int = 123456
@@ -50,7 +52,6 @@ class TestCookieCreation(object):
         self.expected_args.append('Domain=123456')
         self.assert_cookie_args(cookie, self.expected_args)
 
-
     def test_not_secure_cookie(self):
         not_secure = False
         cookie = create_cookie(self.key, self.value, self.path, self.expires,
@@ -58,7 +59,6 @@ class TestCookieCreation(object):
 
         del self.expected_args[4]
         self.assert_cookie_args(cookie, self.expected_args)
-
 
     def assert_cookie_args(self, cookie, expected_args):
         assert isinstance(cookie, dict)
@@ -76,24 +76,20 @@ class TestDateFormat(object):
         formated = format_date(date)
         assert formated == 'Wed, 21-Dec-2016 22:56:01 GMT'
 
-
     def test_format_int(self):
         date = 1482357361
         formated = format_date(date)
         assert formated == 'Wed, 21-Dec-2016 21:56:01 GMT'
-
 
     def test_format_datetime(self):
         date = datetime(2016, 12, 21, 21, 56, 01)
         formated = format_date(date)
         assert formated == 'Wed, 21-Dec-2016 21:56:01 GMT'
 
-
     def test_format_none(self):
         date = None
         formated = format_date(date)
         assert formated == format_date(gmtime())
-
 
     def test_format_string(self):
         date = 'Tomorrow'
