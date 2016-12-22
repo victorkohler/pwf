@@ -49,6 +49,7 @@ class Response(object):
         cookie = cookies.create_cookie(key, value, path, expires, max_age,
                 domain, secure, httponly)
 
+        #TODO: Handle multiple cookies
         self.headers.update(cookie)
 
     def render(self):
@@ -77,9 +78,9 @@ class Response(object):
             return resp_code.encode('utf-8')
 
         try:
+            data = bytes(self.data).encode('utf-8')
+        except UnicodeDecodeError:
             data = bytes(self.data)
-        except Exception:
-            data = str(self.data).encode('utf-8')
         
         self.make_response(resp_code, self.headers)
         return data

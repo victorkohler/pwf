@@ -27,6 +27,12 @@ def json_response(data, headers=None):
     else:
         headers = {}
 
+    # Turn header values into strings
+    for header, value in headers.iteritems():
+        if not isinstance(value, str):
+            headers[header] = bytes(value)
+
+
     headers['content-type'] = 'application/json'
     return json.dumps(data), headers
 

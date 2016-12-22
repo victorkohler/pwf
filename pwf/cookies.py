@@ -5,8 +5,9 @@
 @version: 0.1
 """
 
-#import Cookie
+from time import gmtime
 from collections import namedtuple
+from datetime import datetime, timedelta
 
 def create_cookie(key, value='', path='/', expires=None, max_age=None,
             domain=None, secure=False, httponly=False):
@@ -14,41 +15,64 @@ def create_cookie(key, value='', path='/', expires=None, max_age=None,
     requred and we then loop through the additional ones to check what
     to add and how.
     """
+    if isinstance(max_age, timedelta):
+        max_age = (max_age.days * 60 * 60 * 24) + max_age.seconds
+  
+    if expires and not isinstance(expires, str):
+        expires = format_date(expires)
 
-    Attribute = namedtuple('Attribute', ['name', 'value', 'str_value'])
-
-    attributes = (Attribute('Domain', domain, True),
-                  Attribute('Expires', expires, False,),
-                  Attribute('Max-Age', max_age, False),
-                  Attribute('Secure', secure, None),
-                  Attribute('HttpOnly', httponly, None),
-                  Attribute('Path', path, False))
+    attributes = (('Domain', domain, True),
+                  ('Expires', expires, False,),
+                  ('Max-Age', max_age, False),
+                  ('Secure', secure, None),
+                  ('HttpOnly', httponly, None),
+                  ('Path', path, False))
        
     buf = [key + '=' + value]
-    for a in attributes:
+    for name, value, use_value in attributes:
         
         # If a.str_value is None but there is a value set we only add the
         # name to the cookie (Example: Secure rather than Secure=True)
-        if a.str_value is None:
-            if a.value:
-                buf.append(a.name)
-            continue
+        if use_value is None:
+            if value:
+                buf.append(name)
+            continue # pragma: no cover
 
-        if a.value is None:
+        if value is None:
             continue
         
-        if not isinstance(a.value, (bytes, bytearray)):
-            a.value = bytes(a.value)
+        if not isinstance(value, (bytes, bytearray)):
+            value = bytes(value)
 
-        attribute_string = '{}={}'.format(a.name, a.value)
+        attribute_string = '{}={}'.format(name, value)
         buf.append(bytes(attribute_string))
     
     cookie_string = '; '.join(buf)
     cookieheader = {'Set-Cookie': cookie_string}
 
-    #cookie = Cookie.SimpleCookie()
-    #cookie[key] = value
-    #cookieheader = {'Set-Cookie': cookie[key].OutputString()}
     return cookieheader
+
+
+
+def format_date(date):
+    """Format to Wed, 21-Dec-2016 21:28:34 GMT.
+    Accepts int, float or datetime object.
+    """
+    if date is None:
+        date = gmtime()
+    elif isinstance(date, datetime):
+        date = date.utctimetuple()
+    elif isinstance(date, (int, float)):
+        date = gmtime(date)
+
+    return '%s, %02d%s%s%s%s %02d:%02d:%02d GMT' % (
+        ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')[date.tm_wday],
+        date.tm_mday, '-',
+        ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
+        'Oct', 'Nov', 'Dec')[date.tm_mon - 1],
+        '-', str(date.tm_year), date.tm_hour, date.tm_min, date.tm_sec
+        )
+
+
 
 
