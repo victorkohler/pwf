@@ -3,26 +3,24 @@
 PWF Quickstart Guide
 ====================
 
-This guide explains how to get started with pwd. It only covers interacting
-with the PWF library, integration with uwsgi and nginx are covered in another
-chapter.
+This guide explains how to get started with PWF. It only covers interacting
+with the PWF library, integration and setup will be covered in another
+section.
 
 If you are familiar with Flask and to some extent even Web.py you will
-without doubt see many similarities in how you interacti with PWF and those
-frameworks. This is intentional. There are however some aspects that differ
-so make sure to read through the guide.
+without doubt see many similarities in how you interacti with PWF. 
+This is intentional.
 
-DISCLAIMER: Even though it looks very similar to Flask on the surface this
+BUT, even though it looks very similar to Flask on the surface this
 does not mean that you will be able to expect the same features in PWF.
-Please read the README file for what PWD is and what it is not.
+Please read the README for what PWF is and what it is not.
 
 
 The simplest case
 -----------------
 
 The most basic thing you can do with PWF is to recive a GET request
-and return some text back to the user. For this, all you need is
-five lines of code: ::
+and return some text back to the user. For this, all you need is: ::
     
     from pwf.app import App()
     app = App()
@@ -36,14 +34,14 @@ First we import the App() object from pwf.app and create a new instance of
 it named "app". After that we use the @app.route() decorator and pass it a
 route to use (in this case just '/' for the root path). The function we
 decorate, called "index" is responsible for generating the data we want
-to return back to the user, in this case the string 'Hello World'. 
+to return back to the user ("Hello World").
 
 
 Basic Routing
 -------------
 
 Now let's take a look at routing and the @app.route decorator in a bit more
-detail. In the previous example we defined only one route with the '/' URL. Next
+detail. In the previous example we defined only one route for '/'. Next
 we'll declare some more routes with different paths: ::
 
     @app.route('/')
@@ -62,7 +60,7 @@ we'll declare some more routes with different paths: ::
         
 
 We can define as many routes as we like and associate each one with a function.
-As you might have noticed in the last example, the name of the
+As you might have noticed in the '/user' example, the name of the
 path does not have to be the same as the function name.
 
 You can also use variable paths to pass specific data from the URL to your
@@ -73,7 +71,7 @@ in "<" and ">", like so: ::
     def user(request, username):
         return 'Welcome back %s' % username
 
-If you visit the url /user/walter the response will read "Welcome back walter".
+If you visit the path '/user/walter' the response will read "Welcome back walter".
 You don't need to have the variable at the end of the path and a path can contain
 multiple variable parts: ::
 
@@ -91,10 +89,10 @@ The view function is the function you as the user define for each route. The job
 of this function is to do whatever work you need perform and return something
 back to the server.
 
-The view function requres you to pass in the request object and any variable
+The view function requires you to pass in the request object and any variable
 you've defined in your path.
 
-Example of a view function that does some very basic work before returning
+Example of a view function that does some basic work before returning
 a JSON object with some very useful data: ::
     
     import json    
@@ -128,8 +126,6 @@ separately: ::
             return 'Thanks for sending your data!'
         elif request.method == 'GET':
             return 'This endpoint is for sending data'
-        else:
-            return 'Please use GET or POST requests'
 
 
 
@@ -171,9 +167,9 @@ The Response object
 -------------------
 
 Just as there is a Request object PWF also has a Response object.
-In all the examples so far the Response object was created for us
-after we returned from the view function. But sometimes we want to
-modify it ourselves in the view.
+In all the examples so far the Response object was created for us behind
+the scenes after we returned something from the view function. But
+sometimes we want to modify it ourselves in the view.
 
 This might be to set some custom headers, change the status code or
 set a cookie.
@@ -219,15 +215,5 @@ Supported methods for the response object:
     - response.set_cookie(key, value)
 
     - response.code
-
-
-
-
-
-
-
-
-
-
 
 

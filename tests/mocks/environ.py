@@ -4,8 +4,6 @@
 @since: date 18/12/2016
 @version: 0.1
 """
-import sys
-sys.path.append('/var/www/pwf')
 
 from pwf.request import Request
 import StringIO
