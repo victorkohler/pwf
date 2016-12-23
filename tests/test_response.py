@@ -9,12 +9,8 @@ import json
 from collections import Counter
 
 from pwf.response import Response
+from mocks.make_response import make_response
 
-def make_response(resp_code, headers):
-    assert isinstance(resp_code, str)
-    assert isinstance(headers, list)
-    assert isinstance(headers[0], tuple)
-    assert resp_code[0] in ['1','2','3','4','5']
 
 class TestResponseObject(object):
 

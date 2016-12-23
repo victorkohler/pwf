@@ -6,7 +6,6 @@
 
 Tests covering the core functionality of cookies and functionality
 from pwf/cookies.py
-
 """
 
 import pytest
@@ -65,8 +64,6 @@ class TestCookieCreation(object):
         assert len(cookie) == 1
         cookie_args = cookie['Set-Cookie'].split('; ')
         assert Counter(cookie_args) == Counter(expected_args)
-
-
 
 
 class TestDateFormat(object):

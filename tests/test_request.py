@@ -65,7 +65,6 @@ class TestRequestObject(object):
         assert parsed_data['foo'] == 'Hello World'
         assert parsed_data['bar'] == 'baz'
 
-
     def test_form_file(self):
         data = (b'--foo\r\n'
                 b'Content-Disposition: form-data; name="foo"; filename="foo.txt"\r\n'
@@ -81,7 +80,7 @@ class TestRequestObject(object):
         parsed_data = self.request._Request__parse_data(environ)
         assert parsed_data['foo'].read() == 'file contents, just the contents'
 
-
     def test_repr(self):
         self.request.__repr__()
+        
 
