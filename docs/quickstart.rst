@@ -133,14 +133,14 @@ The Request object
 ------------------
 
 In the example above we used the request object through request.method to
-check for POST or GET. The request object holds important information about
+check for POST or GET. The request object holds information about
 the request that you can access in the view function.
 
 The request object always needs to be passed into the view function
 (althoug you can name it whatever you like). ::
     
     @app.route('/page1')
-    def page_one(r):
+    def page_one(request):
         return 'Hello page 1'
 
 
@@ -150,7 +150,7 @@ Supported methods for the request object are:
       Return the request method as a string ('GET', 'POST', 'OPTIONS' etc)
 
     - request.headers:
-      Returns the request headers as a dictionary
+      Returns the request headers as a dictionary.
 
     - request.query:
       Returns keys and values from a query string as a dictionary.
@@ -158,8 +158,42 @@ Supported methods for the request object are:
     - request.data:
       Returns raw post data as a string or form data as a dictionary.
 
+    - request.json_data:
+      Returns the request data as a dictionary. Requires the data to be
+      valid json and the content-type to be application/json, if not it
+      return None.
+
+    - request.files:
+      If files where uploaded they will be stored in the request.files
+      dictionary. The key is the name of the file and the value a PWF
+      FileWrapper object.
+
     - request.environ:
       Returns the raw WSGI environ dict.
+
+
+Some examples: ::
+    
+    @app.route('/')
+    def start(request):
+        custom_header = request.headers['X-Custom-Header']
+        user_id = request.query['id']
+
+    @app.route('/update', methods=['POST'])
+    def update(request):
+        user_id = request.data['id']
+        name = request.data['name']
+
+    @app.route('/update-json', methods=['POST'])
+    def update_json(request):
+        data = request.json_data
+        user_id = data['id']
+        name = data['name']
+    
+    @app.route('/upload', methods=['POST'])
+    def upload_file(request):
+        f = request.files['myfile']
+        f.save('/path/to/upload' + f.filename)
 
 
 

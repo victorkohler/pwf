@@ -134,5 +134,29 @@ def test_close_filewrapper(req, monkeypatch):
     filewrapper.close()
 
 
+def test_json_parser(req):
+    req.data = '{"title": "Example", "data": {"first": "second"}}'
+    data = req.json_data
+    assert data is None
+
+    req.environ['CONTENT_TYPE'] = 'application/json'
+    assert not req.json
+    data = req.json_data
+    assert isinstance(data, dict)
+    assert data['title'] == 'Example'
+    assert data['data']['first'] == 'second'
+
+    data = req.json_data
+    assert isinstance(data, dict)
+    assert req.json
+
+
+def test_json_parser_fail(req):
+    req.data = 'Just a string'
+    req.environ['CONTENT_TYPE'] = 'application/json'
+    data = req.json_data
+    assert data is None
+
+
 def test_repr(req):
     req.__repr__()

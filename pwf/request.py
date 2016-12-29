@@ -7,8 +7,10 @@
 
 import cgi
 import urlparse
+import json
 import Cookie
 from wrappers import FileWrapper
+
 
 class Request(object):
     """Create a Request object populated with the contents of
@@ -29,6 +31,7 @@ class Request(object):
         self.data = self.__parse_data(environ)
         self.method = self.__parse_method(environ)
         self.cookies = self.__parse_cookies(environ)
+        self.json = None
 
 
     def __parse_cookies(self, environ):
@@ -114,6 +117,28 @@ class Request(object):
                 data[k.name] = k.file
             else:
                 data[k.name] = k.value
+
+        return data
+
+    @property
+    def json_data(self):
+        """If the content type is application/json, parse self.data and
+        return a python dictionary"""
+        content_type = self.environ['CONTENT_TYPE']
+        if not 'application/json' in content_type.lower():
+            return None
+        
+        # If the data has already been parsed we return the
+        # cached version. If no cache exists we parse it,
+        # cache it in self.json and return the dict
+        if isinstance(self.json, dict):
+            return self.json
+
+        try:
+            data = json.loads(self.data)
+            self.json = data
+        except ValueError:
+            return None
 
         return data
 
