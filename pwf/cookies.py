@@ -31,7 +31,7 @@ def create_cookie(key, value='', path='/', expires=None, max_age=None,
     buf = [key + '=' + value]
     for name, value, use_value in attributes:
         
-        # If a.str_value is None but there is a value set we only add the
+        # If use_value is None but value is set we only add the
         # name to the cookie (Example: Secure rather than Secure=True)
         if use_value is None:
             if value:

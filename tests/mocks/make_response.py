@@ -7,10 +7,9 @@
 
 import pytest
 
+
 def make_response(resp_code, headers):
     assert isinstance(resp_code, str)
     assert isinstance(headers, list)
     assert isinstance(headers[0], tuple)
-    assert resp_code[0] in ['1','2','3','4','5']
-
-
+    assert resp_code[0] in ['1', '2', '3', '4', '5']

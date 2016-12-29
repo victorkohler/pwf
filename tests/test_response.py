@@ -67,10 +67,8 @@ class TestResponseObject(object):
         self.response.make_response = make_response
         render_data = self.response.render()
         assert render_data == self.response.data
-        
+
     def test_repr(self):
         assert self.response.__repr__() == \
-                "Response({'headers': {}, 'code': 200, 'data': '', 'make_response': None})"
-
-
-
+                ("Response({'headers': {}, 'code': 200, 'data': '',"
+                 " 'make_response': None})")

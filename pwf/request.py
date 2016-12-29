@@ -8,6 +8,7 @@
 import cgi
 import urlparse
 import Cookie
+from wrappers import FileWrapper
 
 class Request(object):
     """Create a Request object populated with the contents of
@@ -21,12 +22,14 @@ class Request(object):
         """Set object variables that will be accessible
         in the view function.
         """
+        self.files = {}
         self.environ = environ
         self.headers = self.__parse_headers(environ)
         self.query = self.__parse_query(environ)
         self.data = self.__parse_data(environ)
         self.method = self.__parse_method(environ)
         self.cookies = self.__parse_cookies(environ)
+
 
     def __parse_cookies(self, environ):
         """Get cookies from environ and return a dict with 
@@ -77,34 +80,42 @@ class Request(object):
         """Parse the request body data based on content type.
         
         If the request is form data we use cgi.FieldStorage to parse it.
-        
         If it's raw data (json, xml, javascript ect) we just read it from
         environ[wsgi.input] and return it as is.
         
         If no data is sent we return an empty dict.
         """
         content_type = environ['CONTENT_TYPE'].lower()
-        data = {}
 
-        # If we're dealing with form data:
         if 'form' in content_type:
-            #keep_blank_values=True
-            #encoding = True
-            env_data = cgi.FieldStorage(environ['wsgi.input'], environ=environ)
-            
-            for k in env_data.list:
-                # check that the request is not "application/x-www-form-urlencoded"
-                # which will be a cgi.MiniFieldStorage object.
-                # NOTE: Perhaps add support for x-www-form in the future
-                if not isinstance(k, cgi.MiniFieldStorage):
-                    if k.filename:
-                         data[k.name] = k.file
-                    else:
-                        data[k.name] = k.value
-            return data
+            return self.__parse_form(environ)
         else:
             length = self.headers['CONTENT_LENGTH']
             return environ['wsgi.input'].read(length)
+
+    def __parse_form(self, environ):
+        """Parse form data. If a file is included we wrap it using
+        the FileWrapper and add it to self.files. If it's regular
+        form data we add the key and value to the data dict
+        """
+        data = {}
+        env_data = cgi.FieldStorage(environ['wsgi.input'], environ=environ,
+                keep_blank_values=True)
+
+        for k in env_data.list:
+            # NOTE: Perhaps add support application/x-www-form-urlencoded
+            # in the future.
+            if isinstance(k, cgi.MiniFieldStorage):
+                return None
+
+            if k.filename:
+                filewrapper = FileWrapper(k.file, k.filename, k.name)
+                self.files[k.name] = filewrapper
+                data[k.name] = k.file
+            else:
+                data[k.name] = k.value
+
+        return data
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.__dict__)
