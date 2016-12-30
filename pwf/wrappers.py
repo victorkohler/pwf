@@ -7,6 +7,7 @@
 
 
 import shutil
+import json
 
 
 class FileWrapper(object):
@@ -23,8 +24,7 @@ class FileWrapper(object):
         self.buffer_size = 16384
 
     def save(self, dest):
-        """
-        Copies the content of the filestream into a file
+        """Copies the content of the filestream into a file
         in the specified destination. We copy the file
         over in chunks equal to the buffer_size.
 
@@ -44,3 +44,24 @@ class FileWrapper(object):
         except Exception:
             pass
 
+class Config(dict):
+    """Subclass of dictionary adding the capability of loading
+    the configuration from a json file.
+
+    The config objects can be accessed through app.config
+
+    Example of adding database credentials:
+
+        app.config['DB_USERNAME'] = 'mos_eisley'
+        app.config['DB_PASSWORD'] = 'wretchedhiveofscumandvillany'
+    """
+
+    def __init__(self):
+        dict.__init__(self or {})
+
+    def from_json_file(self, path):
+        with open(path) as json_file:
+            data = json.loads(json_file.read())
+       
+        for k, v in data.iteritems():
+            self[k] = v

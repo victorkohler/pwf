@@ -6,9 +6,11 @@
 """
 
 import re
+from wrappers import Config
 from request import Request
 from response import Response
 from functools import wraps
+
 
 
 class Pwf(object):
@@ -32,6 +34,7 @@ class Pwf(object):
     
     def __init__(self):
         self.routes = []
+        self.config = Config()
 
     def build_route_pattern(self, url):
         """Regex to find path variables in path"""

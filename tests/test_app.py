@@ -110,11 +110,18 @@ class TestPwfApp(object):
     def test_repr(self):
         assert self.app.__repr__() == 'Pwf()'
 
+    def test_config(self):
+        self.app.config.update(dict(DEBUG=True))
+        assert self.app.config['DEBUG']
+        
+    def test_config_from_json(self):
+        self.app.config.from_json_file('/var/www/pwf/tests/config.json')
+        assert self.app.config['DEBUG']
+
     def __fake_request(self, path):
         self.environ.path_info = path
         render = self.app(self.environ, make_response)
         return render
-
 
 
 
