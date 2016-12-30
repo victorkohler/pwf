@@ -10,7 +10,7 @@ __pycache__/
 .coverage.*
 *,cover
 .tox/
-.sh
+*.sh
 nosetests.xml
 coverage.xml
 

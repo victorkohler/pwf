@@ -46,14 +46,14 @@ class FileWrapper(object):
 
 class Config(dict):
     """Subclass of dictionary adding the capability of loading
-    the configuration from a json file.
+    the configuration from a json file. The config objects
+    can be accessed through "app.config".
 
-    The config objects can be accessed through app.config
-
-    Example of adding database credentials:
+    Example:
 
         app.config['DB_USERNAME'] = 'mos_eisley'
         app.config['DB_PASSWORD'] = 'wretchedhiveofscumandvillany'
+
     """
 
     def __init__(self):
