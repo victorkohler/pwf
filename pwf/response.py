@@ -70,10 +70,9 @@ class Response(object):
 
         # httplib.responses maps the HTTP 1.1 status codes to W3C names.
         # Output example: '200 OK' or '404 Not Found'
-        # TODO: Handle unspupported status code
         resp_code = '{} {}'.format(self.code, httplib.responses[self.code])
 
-        if str(self.code)[0] in ['4', '5']:
+        if str(self.code)[0] in ['4', '5'] and not self.data:
             self.make_response(resp_code, self.headers)
             return resp_code.encode('utf-8')
 

@@ -195,6 +195,7 @@ def test_last_group(app, environ):
     @app.last(group='one')
     def group_one_func(r):
         r.data = 'Group one!'
+        return r
 
     render_data_1 = fake_request('/', app, environ)
     render_data_2 = fake_request('/group', app, environ)
@@ -204,9 +205,24 @@ def test_last_group(app, environ):
     assert my_value == 'last'
 
 
-def test_repr(app):
-    assert app.__repr__() == 'Pwf()'
+def test_error(app, environ):
 
+    @app.error(404)
+    def handle_error():
+        return 'Error'
+
+    @app.error(405)
+    def handle_forbidden():
+        return 'Forbidden'
+
+    @app.route('/post', methods=['POST'])
+    def post_data(request):
+        return 'Test'
+
+    render_data_1 = fake_request('/jasnd', app, environ)
+    render_data_2 = fake_request('/post', app, environ)
+    assert render_data_1 == 'Error'
+    assert render_data_2 == 'Forbidden'
 
 def test_config(app):
     app.config.update(dict(DEBUG=True))
@@ -222,4 +238,9 @@ def fake_request(path, app, environ):
     environ.path_info = path
     render = app(environ, make_response)
     return render
+
+def test_repr(app):
+    assert app.__repr__() == 'Pwf()'
+
+
 
