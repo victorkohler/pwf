@@ -30,6 +30,11 @@ class FileWrapper(object):
 
         Args:
             dest (str): The path where we save the file.
+
+        Example usage:
+            my_file = request.files['deathstarplans']
+            my_file.save('/path/to/save/secret-plans.jpg')
+
         """
         if isinstance(dest, (str, unicode)):
             dest = open(dest, 'wb')

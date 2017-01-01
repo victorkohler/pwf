@@ -146,30 +146,30 @@ The request object always needs to be passed into the view function
 
 Supported methods for the request object are:
 
-    - request.method:
-      Return the request method as a string ('GET', 'POST', 'OPTIONS' etc)
+``request.method``
+    Return the request method as a string ('GET', 'POST', 'OPTIONS' etc)
 
-    - request.headers:
-      Returns the request headers as a dictionary.
+``request.headers``
+    Returns the request headers as a dictionary.
 
-    - request.query:
-      Returns keys and values from a query string as a dictionary.
+``request.query``
+    Returns keys and values from a query string as a dictionary.
 
-    - request.data:
-      Returns raw post data as a string or form data as a dictionary.
+``request.data``
+    Returns raw post data as a string or form data as a dictionary.
 
-    - request.json_data:
-      Returns the request data as a dictionary. Requires the data to be
-      valid json and the content-type to be application/json, if not it
-      return None.
+``request.json_data``
+    Returns the request data as a dictionary. Requires the data to be
+    valid json and the content-type to be application/json, if not it
+    return None.
 
-    - request.files:
-      If files where uploaded they will be stored in the request.files
-      dictionary. The key is the name of the file and the value a PWF
-      FileWrapper object.
+``request.files``
+    If files where uploaded they will be stored in the request.files
+    dictionary. The key is the name of the file and the value a PWF
+    FileWrapper object.
 
-    - request.environ:
-      Returns the raw WSGI environ dict.
+``request.environ``
+    Returns the raw WSGI environ dict.
 
 
 Some examples: ::
@@ -242,12 +242,82 @@ add it later. ::
 
 Supported methods for the response object:
 
-    - response.data
+    - ``response.data``
 
-    - response.headers
+    - ``response.headers``
 
-    - response.set_cookie(key, value)
+    - ``response.set_cookie(key, value)``
 
-    - response.code
+    - ``response.code``
+
+
+Using app.first and app.last
+----------------------------
+
+The "first" and "last" decorators are used to apply a function before or after
+any request. Useful if you want to perform the same operation on all requests.
+
+
+app.first
+---------
+
+Executed before the request reaches the view function. The app.first function
+takes the request object as an argument and if the function returns a
+not None value the view function is skipped and that value returned to the
+server. If nothing is returned the view function will get executed normally.
+
+Example of using @app.first to check the content type of incoming requests and
+return 405 for all 'text/plain' requests: ::
+
+    @app.first()
+    def check_content_type(request):
+        if request.headers['CONTENT_TYPE'] == 'text/plain':
+            resp = app.make_response()
+            resp.code = 405
+            return resp
+
+app.last
+--------
+
+Executed after the view function returns and before the response gets
+sent back to the server. The app.last function takes the response object
+as an argument and also needs to return a response object.
+
+Example of using @app.last to add a content-type header to all requests: ::
+    
+    @app.last()
+    def add_header(response):
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+
+Working with groups
+------------------
+
+Sometimes adding rules to all incoming or outgoing requests is too general.
+Here you can use groups to define what rules should be applied to what routes.
+
+To define a group you add group="group-name" as an argument to both the routes
+that should be included and the @app.last() decorator.
+
+Example: ::
+    
+    @app.route('/')
+    def view_func(request):
+        return 'Hello'
+
+    @app.route('/json', group='json_data')
+    def view_func(request):
+        return json.dumps({'data': 'Hello'})
+
+    @app.last(group='json_data')
+    def add_header(response):
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+
+In the example above the add_header function will only be applied to
+the '/json' route.
+
 
 
