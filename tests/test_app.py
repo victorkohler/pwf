@@ -5,6 +5,7 @@
 @version: 0.1
 """
 
+
 import pytest
 import json
 
@@ -13,8 +14,6 @@ from pwf.request import Request
 from pwf.response import Response
 from mocks.environ import CreateEnviron
 from mocks.make_response import make_response
-
-
 
 
 @pytest.fixture
@@ -205,6 +204,63 @@ def test_last_group(app, environ):
     assert my_value == 'last'
 
 
+def test_last_group_return(app, environ):
+    
+    @app.route('/', group='json')
+    def index(r):
+        data = {'data': 'some data'}
+        return json.dumps(data)
+
+    @app.last(group='json')
+    def add_header(response):
+        response.headers['custom'] = 'custom-header'
+        return response
+
+    render_data = fake_request('/', app, environ)
+    assert json.loads(render_data) == {'data': 'some data'}
+
+
+def test_internal_error(app, environ):
+
+    @app.route('/')
+    def index(r):
+        return some_variable
+
+    render_data = fake_request('/', app, environ)
+    assert render_data == '500 Internal Server Error'
+
+    @app.error(500)
+    def handle_error():
+        return 'An error'
+
+    render_data = fake_request('/', app, environ)
+    assert render_data == 'An error'
+
+
+def test_last_internal_error(app, environ):
+    @app.route('/')
+    def index(r):
+        return 'Hello'
+
+    @app.last()
+    def error(r):
+        return some_variable
+
+    render_data = fake_request('/', app, environ)
+    assert render_data == '500 Internal Server Error'
+
+
+def test_debug_mode(app, environ):
+    app.config['DEBUG'] = True
+    
+    @app.route('/')
+    def index(r):
+        return unknown_variable
+
+    with pytest.raises(NameError) as error:
+        render_data = fake_request('/', app, environ)
+
+
 def test_error(app, environ):
 
     @app.error(404)
@@ -224,6 +280,7 @@ def test_error(app, environ):
     assert render_data_1 == 'Error'
     assert render_data_2 == 'Forbidden'
 
+
 def test_config(app):
     app.config.update(dict(DEBUG=True))
     assert app.config['DEBUG']
@@ -238,6 +295,7 @@ def fake_request(path, app, environ):
     environ.path_info = path
     render = app(environ, make_response)
     return render
+
 
 def test_repr(app):
     assert app.__repr__() == 'Pwf()'

@@ -10,6 +10,7 @@ from wrappers import Config
 from request import Request
 from response import Response
 from functools import wraps
+from exceptions import HTTPException, MethodNotAllowed, NotFound, InternalError
 
 
 
@@ -80,62 +81,17 @@ class Pwf(object):
         return decorate
 
     def path_dispatch(self, request, make_response):
-        """Gets the requested path from the headers and
-        matches it to a route, function, group and method stored in
-        self.routes. The view funtion itself then gets executed to generate
-        the response-data.
-
-        If the requested path is not found in self.routes or the
-        request method used is not supported by the view we return
-        an error Response object.
-
-        We also execute any "first" and "last" functions.
+        """Dispatches the request, does pre and post processing and
+        dispatches any exceptions to the exception handler.
         """
+        try:
+            rv = self.preprocess_request(request)
+            if rv is None:
+                rv = self.process_request(request)
+        except Exception as e:
+            rv = self.handle_exception(e, make_response)
 
-        #: Execute any general "first" functions
-        rv = self.__execute_first(request)
-        if rv:
-            response = self.__build_response(rv, make_response)
-            return response
-       
-        #: Match to a route
-        path = request.headers['PATH_INFO']
-        method = request.headers['REQUEST_METHOD']
-        route_match = self.get_route_match(path)
-
-        if route_match:
-            kwargs, methods, group, view_function = route_match
-            
-            #: Execute any first functions for route group
-            first_group_rv = self.__execute_first_groups(request, group)
-            if first_group_rv is not None:
-                response = self.__build_response(first_group_rv, make_response)
-                return response
-
-            if method not in methods:
-                return self.__error_return(make_response, code=405)
-            else:
-                # TODO: Handle exception
-                data = view_function(request, **kwargs)
-                response = self.__build_response(data, make_response)
-            
-            #: Execute any last functions for a route group. If we don't want
-            #: functions without a group to be executed on top of the ones with
-            #: a group, we should build and return the response here.
-            last_group_rv = self.__execute_last_groups(response, group)
-            if last_group_rv is not None:
-                response = last_group_rv
-
-        else:
-            return self.__error_return(make_response, code=404)
-        
-        #: Execute general 'last' functions
-        last_rv = self.__execute_last(response)
-        if last_rv is not None:
-            return last_rv
-
-        return self.__build_response(response, make_response)
-
+        return self.postprocess_request(rv, make_response)
 
     def dispatch_request(self, environ, make_response):
         """Instantiate a new Request object based on environ,
@@ -207,6 +163,92 @@ class Pwf(object):
             self.errorhandlers[code] = f
         return wrapper
 
+    def preprocess_request(self, request):
+        """The first step of the request to response cycle.
+        Here we execute any general @app.first functions and
+        if a return value is given return it to the server.
+        """
+        #: Execute any general "first" functions
+        rv = self.__execute_first(request)
+        if rv is not None:
+            return rv
+
+    def process_request(self, request):
+        """Gets the requested path from the headers and
+        matches it to a route, function, group and method stored in
+        self.routes. The view funtion itself then gets executed to generate
+        the response-data.
+
+        If the requested path is not found in self.routes or the
+        request method used is not supported by the view we return
+        an error Response object.
+
+        We also execute any "first" and "last" functions.
+        """
+        path = request.headers['PATH_INFO']
+        method = request.headers['REQUEST_METHOD']
+
+        #: Match to a route
+        route_match = self.get_route_match(path)
+
+        if route_match:
+            kwargs, methods, group, view_function = route_match
+
+            #: Execute any first functions for route group
+            first_group_rv = self.__execute_first_groups(request, group)
+            if first_group_rv is not None:
+                return first_group_rv
+            
+            if method not in methods:
+                raise MethodNotAllowed()
+            else:
+                rv = view_function(request, **kwargs)
+
+            #: Execute any last functions for a route group. If we don't want
+            #: functions without a group to be executed on top of the ones with
+            #: a group, we should build and return the response here.
+            last_group_rv = self.__execute_last_groups(rv, group)      
+            if last_group_rv is not None:
+                return last_group_rv
+            
+        else:
+            raise NotFound()
+            
+        return rv
+
+    def postprocess_request(self, rv, make_response):
+        """The last step of the request to response cycle.
+        Here we execute any general @app.last functions and
+        return a valid response object.
+        """
+        response = self.__build_response(rv, make_response)
+        
+        try:
+            last_rv = self.__execute_last(response)
+        except Exception as e:
+            last_rv = self.handle_exception(e, make_response)
+
+        if last_rv is not None:
+            return last_rv
+
+        return response
+    
+    def handle_exception(self, e, make_response):
+        """Builds the appropriate response object
+        based on what exception was raised.
+        
+        If debug is true we don't handle the exception
+        but just re-raise it again.
+        """
+        if self.config.get('DEBUG', None):
+            raise e
+
+        if isinstance(e, (NotFound, MethodNotAllowed)):
+            rv = self.__error_return(make_response, e.respcode)
+        elif isinstance(e, Exception):
+            rv = self.__error_return(make_response, 500)
+        
+        return rv
 
     def __build_response(self, data, make_response, code=200):
         """Generaes the final response object.
@@ -250,6 +292,9 @@ class Pwf(object):
         """Runs throug and executes any functions
         in the self.last_funcs dictionary.
         """
+        if not isinstance(response, Response):
+            response = Response(data=response)
+
         funcs = self.last_funcs.get(group, ())
         for func in funcs:
             rv = func(response)
