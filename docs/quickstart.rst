@@ -320,4 +320,43 @@ In the example above the add_header function will only be applied to
 the '/json' route.
 
 
+Configuration Handling
+----------------------
+
+The configuration is used to both change how PWF behaves and set
+your own values to be used throughout the app.
+
+The config is accessed through the app.config object and acts as 
+any dictionary
+
+Example: ::
+
+    app = Pwf()
+    app.config['DEBUG'] = True
+    app.config['DB_USERNAME'] = 'mos_eisley'
+    app.config['DB_PASSWORD'] = 'wretchedhiveofscumandvillany'
+
+
+You can also load the configuration from a json file: ::
+
+    app = Pwf()
+    app.config.from_json_file('/path/to/file')
+
+
+These are the config variables currently supported:
+
+.. tabularcolumns:: |p{6.5cm}|p{8.5cm}|
+
+================================= =========================================
+``DEBUG``                         True or False. If set to true exceptions
+                                  will not be catched and their traceback
+                                  will be available. If set to false Pwf
+                                  returns a standard 500 Internal Server
+                                  Error response code if the application
+                                  failes.
+``MAX_CONTENT_LENGTH``            (Not Implemented yet) Intiger value.
+                                  If set, requests with a content length
+                                  larger than the specified value will
+                                  return a 405 Method Not Allowed response.
+================================= =========================================
 

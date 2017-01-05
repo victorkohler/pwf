@@ -26,6 +26,7 @@ def app():
 def environ():
     return CreateEnviron()
 
+
 def test_basic_routing(app, environ):
     @app.route('/')
     def view_func(r):
@@ -41,8 +42,7 @@ def test_basic_routing(app, environ):
         assert callable(view_function)
 
 
-def test_view(app, environ):
-
+def test_view_function(app, environ):
     @app.route('/')
     def view_func(r):
         return r
@@ -51,7 +51,6 @@ def test_view(app, environ):
 
 
 def test_call_app(app, environ):
-
     @app.route('/get')
     def view_func(r):
         assert isinstance(r, Request)
@@ -63,7 +62,6 @@ def test_call_app(app, environ):
 
 
 def test_no_path_match(app, environ):
-
     @app.route('/')
     def view_func(r):
         assert r.code == '404'
@@ -73,7 +71,6 @@ def test_no_path_match(app, environ):
 
 
 def test_unsupported_method(app, environ):
-
     @app.route('/post', methods=['POST'])
     def view_func(r):
         assert r.code == '405'
@@ -83,7 +80,6 @@ def test_unsupported_method(app, environ):
 
 
 def test_response_return(app, environ):
-
     @app.route('/')
     def view_func(r):
         response = Response(data='Hello')
@@ -102,7 +98,6 @@ def test_make_response(app, environ):
 
 
 def test_string_return(app, environ):
-
     @app.route('/get')
     def view_func(r):
         return 'Hello World'
@@ -112,7 +107,6 @@ def test_string_return(app, environ):
 
 
 def test_json_return(app, environ):
-
     @app.route('/json')
     def view_func(r):
         return json.dumps({'success': True})
@@ -135,7 +129,6 @@ def test_first(app, environ):
 
 
 def test_first_group(app, environ):
-        
     @app.route('/')
     def view_func(r):
         return 'Hello World'
@@ -177,7 +170,6 @@ def test_last(app, environ):
        
 
 def test_last_group(app, environ):
-
     @app.route('/')
     def view_func(r):
         return 'Hello World'
@@ -205,7 +197,6 @@ def test_last_group(app, environ):
 
 
 def test_last_group_return(app, environ):
-    
     @app.route('/', group='json')
     def index(r):
         data = {'data': 'some data'}
@@ -221,7 +212,6 @@ def test_last_group_return(app, environ):
 
 
 def test_internal_error(app, environ):
-
     @app.route('/')
     def index(r):
         return some_variable
@@ -250,19 +240,7 @@ def test_last_internal_error(app, environ):
     assert render_data == '500 Internal Server Error'
 
 
-def test_debug_mode(app, environ):
-    app.config['DEBUG'] = True
-    
-    @app.route('/')
-    def index(r):
-        return unknown_variable
-
-    with pytest.raises(NameError) as error:
-        render_data = fake_request('/', app, environ)
-
-
 def test_error(app, environ):
-
     @app.error(404)
     def handle_error():
         return 'Error'
@@ -284,6 +262,17 @@ def test_error(app, environ):
 def test_config(app):
     app.config.update(dict(DEBUG=True))
     assert app.config['DEBUG']
+
+
+def test_debug_mode(app, environ):
+    app.config['DEBUG'] = True
+    
+    @app.route('/')
+    def index(r):
+        return unknown_variable
+
+    with pytest.raises(NameError) as error:
+        render_data = fake_request('/', app, environ)
 
 
 def test_config_from_json(app):

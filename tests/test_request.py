@@ -11,6 +11,8 @@ from mock import Mock
 from collections import Counter
 import shutil
 from io import BytesIO
+from StringIO import StringIO
+import tempfile
 
 from pwf.request import Request
 from pwf.wrappers import FileWrapper
@@ -60,6 +62,13 @@ def test_parse_query(environ, req):
     assert parsed_data['name'] == 'bar'
 
 
+def test_empty_query(req, environ):
+    environ.environ['QUERY_STRING'] = ''
+    parsed_data = req._Request__parse_query(environ)
+    assert isinstance(parsed_data, dict)
+    assert len(parsed_data) == 0
+
+
 def test_parse_method(environ, req):
     environ = {'REQUEST_METHOD': 'OPTIONS'}
     parsed_data = req._Request__parse_method(environ)
@@ -74,9 +83,11 @@ def test_form_data(environ, req):
 
     environ = {'REQUEST_METHOD': 'POST',
             'CONTENT_TYPE': 'multipart/form-data; boundary=foo',
-            'wsgi.input': BytesIO(data)}
+            'wsgi.input': BytesIO(data),
+            'CONTENT_LENGTH': len(data)}
 
     parsed_data = req._Request__parse_data(environ)
+    print parsed_data
     assert isinstance(parsed_data, dict)
     assert parsed_data['foo'] == 'Hello World'
     assert parsed_data['bar'] == 'baz'
@@ -93,45 +104,12 @@ def test_simple_form_data(environ, req):
     assert not parsed_data
 
 
-@pytest.fixture
-def file_environ():
-    data = (b'--foo\r\n'
-            b'Content-Disposition: form-data; name="foo"; \
-                    filename="foo.txt"\r\n'
-            b'X-Custom-Header: blah\r\n'
-            b'Content-Type: text/plain; charset=utf-8\r\n\r\n'
-            b'file contents, just the contents\r\n'
-            b'--foo--')
-
-    file_environ = {'REQUEST_METHOD': 'POST',
-                    'CONTENT_TYPE': 'multipart/form-data; boundary=foo',
-                    'wsgi.input': BytesIO(data)}
-
-    return file_environ
-
-
-def test_form_file(environ, req, file_environ):
-    parsed_data = req._Request__parse_data(file_environ)
-    assert parsed_data['foo'].read() == 'file contents, just the contents'
-    assert isinstance(req.files['foo'], FileWrapper)
-    assert req.files['foo'].filename == 'foo.txt'
-
-
-def test_save_file(req, monkeypatch, file_environ):
-    mock_copy = Mock(return_value=True)
-    mock_open = Mock(return_value=MockOpen())
-    monkeypatch.setattr('shutil.copyfileobj', mock_copy)
-    monkeypatch.setattr('__builtin__.open', mock_open)
-
-    parsed_data = req._Request__parse_data(file_environ)
-    req.files['foo'].save('asd')
-    assert mock_copy.called
-    assert mock_open.called
-
-
-def test_close_filewrapper(req, monkeypatch):
-    filewrapper = FileWrapper('String')
-    filewrapper.close()
+def test_empty_content_length(environ, req):
+    environ.environ['CONTENT_LENGTH'] = ''
+    environ.environ['wsgi.input'] = StringIO('')
+    data_req = Request(environ)
+    parsed_data = data_req._Request__parse_data(environ)
+    assert not parsed_data
 
 
 def test_json_parser(req):

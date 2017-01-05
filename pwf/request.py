@@ -10,6 +10,7 @@ import urlparse
 import json
 import Cookie
 from wrappers import FileWrapper
+from StringIO import StringIO
 
 
 class Request(object):
@@ -23,7 +24,11 @@ class Request(object):
     def __init__(self, environ):
         """Set object variables that will be accessible
         in the view function.
+
+        self.qs sets the wsgi.input stream cache and can
+        be used to retrieve the raw input data.
         """
+        self.stream = self.__cache_stream(environ)
         self.files = {}
         self.environ = environ
         self.headers = self.__parse_headers(environ)
@@ -32,7 +37,6 @@ class Request(object):
         self.method = self.__parse_method(environ)
         self.cookies = self.__parse_cookies(environ)
         self.json = None
-
 
     def __parse_cookies(self, environ):
         """Get cookies from environ and return a dict with 
@@ -54,12 +58,14 @@ class Request(object):
         headers = { 'CONTENT_LENGTH': 0 if not length else int(length) }
 
         wanted_headers = ['REQUEST_METHOD', 'PATH_INFO', 'REMOTE_ADDR', 
-                'REMOTE_HOST', 'CONTENT_TYPE']
+                'REMOTE_HOST', 'CONTENT_TYPE', 'CUSTOM_HEADER']
 
         for k, v in environ.items():
-            # TODO: Add support for custom headers
             if k in wanted_headers or k.startswith('HTTP'):
                 headers[k] = v
+        
+        # TODO: Add support for parsed headers. Parse
+        # "HTTP_X_CUSTOM-HEADER" to "X-Custom-Header"
 
         return headers
 
@@ -72,7 +78,8 @@ class Request(object):
 
     def __parse_query(self, environ):
         """Parse a query string into a dictionary."""
-        query = urlparse.parse_qs(environ['QUERY_STRING'])
+        qs = environ.get('QUERY_STRING', None)
+        query = urlparse.parse_qs(qs)
 
         # Only select the first value for any give query variable.
         # Perhaps support multiple values in the future 
@@ -99,7 +106,7 @@ class Request(object):
     def __parse_form(self, environ):
         """Parse form data. If a file is included we wrap it using
         the FileWrapper and add it to self.files. If it's regular
-        form data we add the key and value to the data dict
+        form data we add the key and value to the data dict.
         """
         data = {}
         env_data = cgi.FieldStorage(environ['wsgi.input'], environ=environ,
@@ -112,13 +119,34 @@ class Request(object):
                 return None
 
             if k.filename:
-                filewrapper = FileWrapper(k.file, k.filename, k.name)
+                headers = dict(k.headers)
+                filewrapper = FileWrapper(k.file, k.filename, 
+                        k.name, content_type=k.type, headers=headers)
+
                 self.files[k.name] = filewrapper
-                data[k.name] = k.file
             else:
                 data[k.name] = k.value
 
         return data
+
+    def __cache_stream(self, environ):
+        """Caches the query stream so it can be accessed
+        multiple times. If the stream was not cached we read
+        envrion['wsgi.input'] and store it in a StringIO object.
+        If a cache exist we return the StringIO value.
+        """
+        try:
+            content_length = int(environ.get('CONTENT_LENGTH', 0))
+        except ValueError:
+            content_length = 0
+
+        wsginput = environ['wsgi.input']
+        if hasattr(wsginput, 'getvalue'):
+            stream = wsginput.getvalue()
+        else:
+            stream = wsginput.read(content_length)
+            environ['wsgi.input'] = StringIO(stream)
+        return stream
 
     @property
     def json_data(self):

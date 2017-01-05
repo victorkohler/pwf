@@ -19,6 +19,8 @@ class CreateEnviron(object):
                  content_type='text/html', content_length=None,
                  headers=None, data=''):
 
+            wsgi_input, content_length = self._create_wsgi_input(data)
+
             self.environ = {
                     'REQUEST_METHOD': method,
                     'PATH_INFO': path,
@@ -28,11 +30,10 @@ class CreateEnviron(object):
                     'CONTENT_LENGTH': content_length,
                     'HTTP_CONTENT_TYPE': content_type,
                     'HTTP_CACHE_CONTROL': 'no-cache',
+                    'wsgi.input': wsgi_input
                     }
 
-            wsgi_input_data = self._create_wsgi_input(data)
-            self.environ['wsgi.input'], self.environ['CONTENT-LENGTH'] \
-                = wsgi_input_data
+            self.stream = None
 
     def get(self, key, default):
         if key in self.environ:
