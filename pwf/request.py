@@ -58,7 +58,7 @@ class Request(object):
         headers = { 'CONTENT_LENGTH': 0 if not length else int(length) }
 
         wanted_headers = ['REQUEST_METHOD', 'PATH_INFO', 'REMOTE_ADDR', 
-                'REMOTE_HOST', 'CONTENT_TYPE', 'CUSTOM_HEADER']
+                'REMOTE_HOST', 'CONTENT_TYPE']
 
         for k, v in environ.items():
             if k in wanted_headers or k.startswith('HTTP'):
