@@ -43,8 +43,6 @@ class FileWrapper(object):
         in the specified destination. We copy the file
         over in chunks equal to the buffer_size.
 
-        After the file is saved the filewrapper buffer
-
         Args:
             dest (str): The path where we save the file.
 

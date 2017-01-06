@@ -360,3 +360,59 @@ These are the config variables currently supported:
                                   return a 405 Method Not Allowed response.
 ================================= =========================================
 
+
+Working with files
+------------------
+
+The easisest way to upload an access files with Pwf is to use
+multipart/form-data. This will make Pwf automatically add any files to
+the ``request.files`` dictionary to be accessed in the view function.
+
+The dictionary key is the field name and the value a Pwf FileWrapper object.
+
+Example: ::
+    
+    @app.route('/file-upload', methods=['POST'])
+    def upload(request):
+        my_file = request.files['my_file']
+        print my_file.filename
+
+        return 'Thanks!'
+
+The FileWrapper is a small wrapper around a wsgi filestream that exposes
+standard file operations like save, seek and read. It allows you to access
+things like filename, content-type and headers.
+
+To save a file to disk using the FileWrapper object: ::
+
+    @app.route('/file-upload', methods=['POST'])
+    def upload(request):
+        my_file = request.files['my_file']
+        filename = my_file.filename
+        path = '/path/to/save/%s' % filename
+        my_file.save(path)
+
+        return 'Saved!'
+
+Sometimes you might want to upload a file using raw binary data with for
+example an application/octet-stream content-type header. Pwf will not make
+any assumptions about this type of data even if the content-disposition is set.
+This is by design and according to the IANA specification.
+
+You can use the FileWrapper object to wrap your binary data and then perform
+any file-like operations on it.
+
+Example: ::
+
+    from pwf.wrappers import FileWrapper
+
+    @app.route('/binary-upload', methods=['POST'])
+    def upload(request):
+        binary = request.stream
+        filename = 'my_file.png'
+
+        my_file = FileWrapper(binary, filename=filename, content_type='image/png')
+        my_file.save('/path/to/file/my_file.png')
+        
+        return 'Saved'
+

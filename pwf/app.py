@@ -329,9 +329,12 @@ class Pwf(object):
         It then calls render() on the response to render it 
         back to the server.
         """
+        #Add request to heap ??
 
         resp = self.dispatch_request(environ, make_response)
         return resp.render()
+        
+        #Remove from context ??
 
     def __repr__(self):
         return '%s()' % self.__class__.__name__
