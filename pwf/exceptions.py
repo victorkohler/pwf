@@ -3,6 +3,9 @@
 @author: Victor Kohler
 @since: date 17/12/2016
 @version: 0.1
+
+Defines custom exceptions used by Pwf or that can be used
+in the view fucntion.
 """
 
 
@@ -32,3 +35,9 @@ class MethodNotAllowed(HTTPException):
 class InternalError(HTTPException):
     code = 500
     description = ''
+
+
+class RequestEntityTooLarge(HTTPException):
+    code = 413
+    description = ''
+

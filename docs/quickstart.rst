@@ -168,6 +168,9 @@ Supported methods for the request object are:
     dictionary. The key is the name of the file and the value a PWF
     FileWrapper object.
 
+``request.stream``
+    Returns a cached version of the wsgi.input stream. 
+
 ``request.environ``
     Returns the raw WSGI environ dict.
 
@@ -354,10 +357,6 @@ These are the config variables currently supported:
                                   returns a standard 500 Internal Server
                                   Error response code if the application
                                   failes.
-``MAX_CONTENT_LENGTH``            (Not Implemented yet) Intiger value.
-                                  If set, requests with a content length
-                                  larger than the specified value will
-                                  return a 405 Method Not Allowed response.
 ================================= =========================================
 
 

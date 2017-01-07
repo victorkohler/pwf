@@ -9,7 +9,7 @@
 import shutil
 import json
 from tempfile import TemporaryFile
-from StringIO import StringIO
+from io import BytesIO
 
 
 class FileWrapper(object):
@@ -25,7 +25,7 @@ class FileWrapper(object):
                  content_type=None, headers=None):
 
         if isinstance(filestream, str):
-            self.filestream = StringIO(filestream)
+            self.filestream = BytesIO(filestream)
         else:
             self.filestream = filestream
 

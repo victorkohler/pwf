@@ -10,7 +10,9 @@ import urlparse
 import json
 import Cookie
 from wrappers import FileWrapper
-from StringIO import StringIO
+from io import BytesIO
+from stack import _app_stack
+from exceptions import RequestEntityTooLarge
 
 
 class Request(object):
@@ -132,8 +134,11 @@ class Request(object):
     def __cache_stream(self, environ):
         """Caches the query stream so it can be accessed
         multiple times. If the stream was not cached we read
-        envrion['wsgi.input'] and store it in a StringIO object.
-        If a cache exist we return the StringIO value.
+        envrion['wsgi.input'] and store it in a BytesIO object.
+        If a cache exist we return the BytesIO value.
+
+        TODO: Use a temporary file instead of in memory BytesIO for
+        large files.
         """
         try:
             content_length = int(environ.get('CONTENT_LENGTH', 0))
@@ -145,7 +150,8 @@ class Request(object):
             stream = wsginput.getvalue()
         else:
             stream = wsginput.read(content_length)
-            environ['wsgi.input'] = StringIO(stream)
+            environ['wsgi.input'] = BytesIO(stream)
+
         return stream
 
     @property
@@ -172,4 +178,3 @@ class Request(object):
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.__dict__)
-

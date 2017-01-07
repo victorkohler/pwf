@@ -10,6 +10,7 @@ from wrappers import Config
 from request import Request
 from response import Response
 from functools import wraps
+from stack import _app_stack
 from exceptions import HTTPException, MethodNotAllowed, NotFound, InternalError
 
 
@@ -39,6 +40,7 @@ class Pwf(object):
         self.first_funcs = {}
         self.last_funcs = {}
         self.errorhandlers = {}
+        _app_stack.push(self)
 
     def build_route_pattern(self, url):
         """Regex to find path variables in path"""
@@ -157,7 +159,6 @@ class Pwf(object):
             @app.error(405)
             def handle_forbidden():
                 return "I'm sorry Dave, I'm afraid i can't do that"
-
         """
         def wrapper(f):
             self.errorhandlers[code] = f
@@ -329,15 +330,8 @@ class Pwf(object):
         It then calls render() on the response to render it 
         back to the server.
         """
-        #Add request to heap ??
-
         resp = self.dispatch_request(environ, make_response)
         return resp.render()
-        
-        #Remove from context ??
 
     def __repr__(self):
         return '%s()' % self.__class__.__name__
-
-
-
