@@ -30,9 +30,7 @@ class Request(object):
         """Set object variables that will be accessible
         in the view function.
 
-        self.stream holds the cached wsgi.input objects
-        as a file-like object.
-
+        self.stream holds the cached wsgi.input as a file-like object.
         """
         self.stream = self.__cache_stream(environ)
         self.environ = environ
@@ -232,12 +230,12 @@ class Request(object):
   
     def __cache_stream(self, environ):
         """Caches the query stream so it can be accessed
-        multiple times. If the stream was not cached we read
-        envrion['wsgi.input'] and store it in a BytesIO object.
-        If a cache exist we return the BytesIO value.
-
-        TODO: Use a temporary file instead of in memory BytesIO for
-        large files.
+        multiple times. If the stream was is cached we read
+        envrion['wsgi.input'] and store it.
+        
+        For large files the stream is stored in a temporary file.
+        For smaller files (< 500KB) we store the data in memory as a
+        BytesIO object.
         """
         try:
             content_length = int(environ.get('CONTENT_LENGTH', 0))
