@@ -48,21 +48,21 @@ def file_environ():
     return file_environ
 
 
-def test_cached_stream(environ, req, file_environ):
-    file_req = Request(file_environ)
-    parsed_data = file_req._Request__parse_data(file_environ)
-    assert isinstance(file_req.files['foo'], FileWrapper)
-    assert file_req.stream
+def test_cache_stream(environ, req, file_environ):
+    data = 'my data'
+    f = StringIO(data)
+    environ = {'wsgi.input': f, 'CONTENT_LENGTH': len(data)}
+    cached_stream = req._Request__cache_stream(environ)
+    assert isinstance(cached_stream, BytesIO)
+    assert cached_stream.read() == data
 
-    f = tempfile.TemporaryFile()
-    f.write('important stuff')
-    f.seek(0)
 
-    file_environ['wsgi.input'] = f
-    file_req = Request(file_environ)
-    assert file_req.stream == 'important stuff'
-
-    f.close()
+def test_large_stream(environ, req):
+    data = 'x' * 1024 * 1024    
+    f = StringIO(data)
+    environ = {'wsgi.input': f, 'CONTENT_LENGTH': len(data)}
+    cached_stream = req._Request__cache_stream(environ)
+    assert isinstance(cached_stream, file)
 
 
 def test_form_file(environ, req, file_environ):
@@ -82,8 +82,9 @@ def test_binary_file(req, file_environ):
     file_environ['CONTENT_LENGTH'] = cl
    
     file_req = Request(file_environ)
-    my_file = FileWrapper(file_req.stream)
-    assert file_req.stream == 'Demogorgon'
+    my_file = FileWrapper(file_req.data)
+    assert file_req.data == 'Demogorgon'
+    assert file_req.get_stream.read() == 'Demogorgon'
     assert my_file.read() == 'Demogorgon'
 
 

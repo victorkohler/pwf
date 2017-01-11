@@ -54,6 +54,25 @@ def test_parse_cookies(environ, req):
     assert cookies == {'session': 'abcd1234'}
 
 
+def test_parse_content_type(req):
+    environ = {'CONTENT_TYPE': 'multipart/form-data; charset=UTF-8'}
+    parsed = req._Request__parse_content_type(environ)
+    mimetype, options = parsed
+    assert isinstance(parsed, tuple)
+    assert isinstance(options, dict)
+    assert isinstance(mimetype, str)
+    assert mimetype == 'multipart/form-data'
+    assert options == {'charset': 'utf-8'}
+
+
+def test_parse_content_type_multi(req):
+    environ = {}
+    parsed = req._Request__parse_content_type(environ)
+    assert isinstance(parsed, tuple)
+    assert parsed[0] == ''
+    assert parsed[1] == {}
+
+
 def test_parse_query(environ, req):
     environ = {'QUERY_STRING': 'id=foo&name=bar'}
     parsed_data = req._Request__parse_query(environ)
@@ -81,26 +100,38 @@ def test_form_data(environ, req):
             b'--foo\r\nContent-Disposition: form-field; name=bar\r\n\r\n'
             b'baz\r\n--foo--')
 
-    environ = {'REQUEST_METHOD': 'POST',
+    environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': '',
             'CONTENT_TYPE': 'multipart/form-data; boundary=foo',
             'wsgi.input': BytesIO(data),
             'CONTENT_LENGTH': len(data)}
 
-    parsed_data = req._Request__parse_data(environ)
-    print parsed_data
+    form_req = Request(environ)
+    parsed_data = form_req.form
     assert isinstance(parsed_data, dict)
     assert parsed_data['foo'] == 'Hello World'
     assert parsed_data['bar'] == 'baz'
 
 
-def test_simple_form_data(environ, req):
+def test_simple_form_data():
     data = 'parameter=value&also=another'
 
-    environ = {'REQUEST_METHOD': 'POST',
+    environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': '',
                'CONTENT_TYPE': 'application/x-www-form-urlencoded',
-               'wsgi.input': BytesIO(data)}
+               'wsgi.input': BytesIO(data), 'CONTENT_LENGTH': len(data)}
 
-    parsed_data = req._Request__parse_data(environ)
+    form_req = Request(environ)
+    parsed_data = form_req._Request__parse_data(environ, parse_form=True)
+    assert not parsed_data
+
+
+def test_form_data_fail(req, environ):
+    data = ''
+    environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': '',
+               'CONTENT_TYPE': 'application/octet-stream',
+               'wsgi.input': BytesIO(data), 'CONTENT_LENGTH': len(data)}
+
+    form_req = Request(environ)
+    parsed_data = form_req._Request__parse_form(environ)
     assert not parsed_data
 
 
@@ -117,7 +148,7 @@ def test_json_parser(req):
     data = req.json_data
     assert data is None
 
-    req.environ['CONTENT_TYPE'] = 'application/json'
+    req.mimetype = 'application/json'
     assert not req.json
     data = req.json_data
     assert isinstance(data, dict)
@@ -131,7 +162,7 @@ def test_json_parser(req):
 
 def test_json_parser_fail(req):
     req.data = 'Just a string'
-    req.environ['CONTENT_TYPE'] = 'application/json'
+    req.mimetype = 'application/json'
     data = req.json_data
     assert data is None
 

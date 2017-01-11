@@ -22,7 +22,7 @@ class FileWrapper(object):
     """
 
     def __init__(self, filestream, filename=None, name=None,
-                 content_type=None, headers=None):
+                 mimetype=None, headers=None):
 
         if isinstance(filestream, str):
             self.filestream = BytesIO(filestream)
@@ -32,9 +32,7 @@ class FileWrapper(object):
         self.filename = filename
         self.name = name
         self.headers = headers
-
-        if content_type is not None:
-            self.content_type = content_type
+        self.mimetype = mimetype
 
         self.buffer_size = 16384
 
@@ -74,6 +72,11 @@ class FileWrapper(object):
             self.filestream.close()
         except Exception:
             pass
+
+    def readline(self):
+        #TODO: Should be used on filestream directly, rather than a function?
+        # Also rename filestream to file?
+        return self.filestream.readline()
 
 
 class Config(dict):

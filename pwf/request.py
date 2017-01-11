@@ -9,8 +9,11 @@ import cgi
 import urlparse
 import json
 import Cookie
-from wrappers import FileWrapper
 from io import BytesIO
+from tempfile import TemporaryFile
+
+from wrappers import FileWrapper
+from utils import cached_property
 from stack import _app_stack
 from exceptions import RequestEntityTooLarge
 
@@ -27,18 +30,26 @@ class Request(object):
         """Set object variables that will be accessible
         in the view function.
 
-        self.qs sets the wsgi.input stream cache and can
-        be used to retrieve the raw input data.
+        self.stream holds the cached wsgi.input objects
+        as a file-like object.
+
         """
         self.stream = self.__cache_stream(environ)
-        self.files = {}
         self.environ = environ
         self.headers = self.__parse_headers(environ)
-        self.query = self.__parse_query(environ)
-        self.data = self.__parse_data(environ)
+        self.content_length = self.__parse_content_length(environ)
+        self.mimetype, self.options = self.__parse_content_type(environ)
         self.method = self.__parse_method(environ)
         self.cookies = self.__parse_cookies(environ)
+
+        self.query = self.__parse_query(environ)
         self.json = None
+        
+        # Defines methods used by __parse_data depending on mime-type
+        self.parse_methods = {
+            'multipart/form-data': self.__parse_form,
+            'application/x-www-form-urlencoded': self.__parse_form
+            }
 
     def __parse_cookies(self, environ):
         """Get cookies from environ and return a dict with 
@@ -50,6 +61,25 @@ class Request(object):
             parsed_cookies[key] = cookies[key].value
 
         return parsed_cookies
+
+    def __parse_content_type(self, environ):
+        """Parses the HTTP Content-Type header into a typle of
+        mimetype and a dictionary of any options.
+        
+        For example the content-type 'multipart/form-data; charset=UTF-8'
+        is parsed into ('multipart/form-data', {'charset': 'utf-8'})
+        
+        The word "Content-Type" is used to refer to the HTTP header
+        with both MIME and options, while "mimetype" refers to the
+        MIME value only.
+        """
+        ct_value = environ.get('CONTENT_TYPE', '').lower()
+        if not ct_value:
+            return '', {}
+
+        mimetype, options = cgi.parse_header(ct_value)
+        return mimetype, options
+        
 
     def __parse_headers(self, environ):
         """We parse the headers from the WSGI environ and
@@ -71,6 +101,15 @@ class Request(object):
 
         return headers
 
+    def __parse_content_length(self, environ):
+        try:
+            cl = int(environ.get('CONTENT_LENGTH', 0))
+        except ValueError:
+            cl = 0
+
+        return cl
+    
+
     def __parse_method(self, environ):
         """Return the current request method as a string.
         For example 'GET' or 'OPTIONS'
@@ -87,32 +126,42 @@ class Request(object):
         # Perhaps support multiple values in the future 
         unique_variables = {k: v[0] for k, v in query.items()}
         return unique_variables
-
-    def __parse_data(self, environ):
-        """Parse the request body data based on content type.
-        
-        If the request is form data we use cgi.FieldStorage to parse it.
-        If it's raw data (json, xml, javascript ect) we just read it from
-        environ[wsgi.input] and return it as is.
-        
-        If no data is sent we return an empty dict.
+    
+    def __parse_data(self, environ, parse_form=False):
+        """Parses the data from the WSGI environ object depending on
+        the mimetype. If no parse method is defined for a
+        particular mimetype we fall back to return the
+        data as a string.
         """
-        content_type = environ['CONTENT_TYPE'].lower()
 
-        if 'form' in content_type:
-            return self.__parse_form(environ)
+        length = self.content_length
+
+        if parse_form is not True:
+            return self.get_stream.read(length)
+
+        parse_method = self.parse_methods.get(self.mimetype, None)
+
+        if parse_method is not None:
+            data = parse_method(environ)
         else:
-            length = self.headers['CONTENT_LENGTH']
-            return environ['wsgi.input'].read(length)
+            data = self.get_stream.read(length)
+
+        return data
+
 
     def __parse_form(self, environ):
         """Parse form data. If a file is included we wrap it using
         the FileWrapper and add it to self.files. If it's regular
         form data we add the key and value to the data dict.
         """
-        data = {}
-        env_data = cgi.FieldStorage(environ['wsgi.input'], environ=environ,
+        form = {}
+        files = {}
+
+        env_data = cgi.FieldStorage(self.get_stream, environ=environ,
                 keep_blank_values=True)
+        
+        if not env_data:
+            return None
 
         for k in env_data.list:
             # NOTE: Perhaps add support application/x-www-form-urlencoded
@@ -123,43 +172,47 @@ class Request(object):
             if k.filename:
                 headers = dict(k.headers)
                 filewrapper = FileWrapper(k.file, k.filename, 
-                        k.name, content_type=k.type, headers=headers)
+                        k.name, mimetype=k.type, headers=headers)
 
-                self.files[k.name] = filewrapper
+                files[k.name] = filewrapper
             else:
-                data[k.name] = k.value
+                form[k.name] = k.value
 
+        req_d = self.__dict__
+        req_d['form'], req_d['files'] = form, files
+
+        return form
+
+    @cached_property
+    def data(self):
+        """Returns any request data as a form object or
+        string, depending on the mimetype"""
+        data = self.__parse_data(self.environ, parse_form=True)
         return data
 
-    def __cache_stream(self, environ):
-        """Caches the query stream so it can be accessed
-        multiple times. If the stream was not cached we read
-        envrion['wsgi.input'] and store it in a BytesIO object.
-        If a cache exist we return the BytesIO value.
+    @cached_property
+    def files(self):
+        """Returns any uploaded files. Empty if no files where pared"""
+        self.__parse_form(self.environ)
+        return self.files
 
-        TODO: Use a temporary file instead of in memory BytesIO for
-        large files.
-        """
-        try:
-            content_length = int(environ.get('CONTENT_LENGTH', 0))
-        except ValueError:
-            content_length = 0
+    @cached_property
+    def form(self):
+        """Returns any form data in the request. Emtpy if no form as parsed"""
+        self.__parse_form(self.environ)
+        return self.form
 
-        wsginput = environ['wsgi.input']
-        if hasattr(wsginput, 'getvalue'):
-            stream = wsginput.getvalue()
-        else:
-            stream = wsginput.read(content_length)
-            environ['wsgi.input'] = BytesIO(stream)
-
-        return stream
+    @property
+    def get_stream(self):
+        """Returns the cached stream as a file-like object"""
+        self.stream.seek(0)
+        return self.stream
 
     @property
     def json_data(self):
-        """If the content type is application/json, parse self.data and
+        """If the mimetype is application/json, parse self.data and
         return a python dictionary"""
-        content_type = self.environ['CONTENT_TYPE']
-        if not 'application/json' in content_type.lower():
+        if not 'application/json' in self.mimetype:
             return None
         
         # If the data has already been parsed we return the
@@ -175,6 +228,35 @@ class Request(object):
             return None
 
         return data
+    
+  
+    def __cache_stream(self, environ):
+        """Caches the query stream so it can be accessed
+        multiple times. If the stream was not cached we read
+        envrion['wsgi.input'] and store it in a BytesIO object.
+        If a cache exist we return the BytesIO value.
+
+        TODO: Use a temporary file instead of in memory BytesIO for
+        large files.
+        """
+        try:
+            content_length = int(environ.get('CONTENT_LENGTH', 0))
+        except ValueError:
+            content_length = 0
+
+        stream = environ['wsgi.input'].read(content_length)
+        
+        # If the stream is large we use a temporary file. If not we
+        # just load it into memory
+        if content_length > 1024 * 500:
+            _stream_cache = TemporaryFile('wb+')
+            _stream_cache.write(stream)
+            _stream_cache.seek(0)
+        else:
+            _stream_cache = BytesIO(stream)
+
+        return _stream_cache
+
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.__dict__)
