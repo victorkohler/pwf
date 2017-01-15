@@ -145,17 +145,16 @@ def test_empty_content_length(environ, req):
 
 def test_json_parser(req):
     req.data = '{"title": "Example", "data": {"first": "second"}}'
-    data = req.json_data
+    data = req.json
     assert data is None
 
     req.mimetype = 'application/json'
-    assert not req.json
-    data = req.json_data
+    data = req.json
     assert isinstance(data, dict)
     assert data['title'] == 'Example'
     assert data['data']['first'] == 'second'
 
-    data = req.json_data
+    data = req.json
     assert isinstance(data, dict)
     assert req.json
 
@@ -163,7 +162,12 @@ def test_json_parser(req):
 def test_json_parser_fail(req):
     req.data = 'Just a string'
     req.mimetype = 'application/json'
-    data = req.json_data
+    data = req.json
+    assert data is None
+
+    req.data = ''
+    req.mimetype = 'application/json'
+    data = req.json
     assert data is None
 
 

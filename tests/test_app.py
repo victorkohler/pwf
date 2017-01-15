@@ -8,6 +8,8 @@
 
 import pytest
 import json
+from wsgiref.simple_server import make_server
+from mock import Mock
 
 from pwf.app import Pwf
 from pwf.request import Request
@@ -280,6 +282,21 @@ def test_config_from_json(app):
     assert app.config['DEBUG']
 
 
+def test_simple_serving(app, monkeypatch, capsys):
+    monkeypatch.setattr('wsgiref.simple_server.make_server', MockSimpleServer)
+    app.run()
+    out, err = capsys.readouterr()
+    assert out == 'PWF now running on http://127.0.0.1:5000/\n'
+
+
+class MockSimpleServer(object):
+    def __init__(self, string, port, server):
+        pass
+
+    def serve_forever(self):
+        return 
+
+
 def fake_request(path, app, environ):
     environ.path_info = path
     render = app(environ, make_response)
@@ -288,6 +305,5 @@ def fake_request(path, app, environ):
 
 def test_repr(app):
     assert app.__repr__() == 'Pwf()'
-
 
 

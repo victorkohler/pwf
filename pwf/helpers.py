@@ -9,13 +9,12 @@ PWF directly but that might come in handy. They are not related
 to the PWF core or specific to WSGI.
 """
 
-
 import json
 import time
 from functools import wraps
 
 
-def json_response(data, headers=None):
+def render_json(data, headers=None):
     """Generates a valid JSON response
     along with the correct content-type header.
 

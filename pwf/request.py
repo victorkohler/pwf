@@ -39,9 +39,8 @@ class Request(object):
         self.mimetype, self.options = self.__parse_content_type(environ)
         self.method = self.__parse_method(environ)
         self.cookies = self.__parse_cookies(environ)
-
         self.query = self.__parse_query(environ)
-        self.json = None
+        #self.json = None
         
         # Defines methods used by __parse_data depending on mime-type
         self.parse_methods = {
@@ -154,18 +153,20 @@ class Request(object):
         """
         form = {}
         files = {}
+        req_d = self.__dict__
+        req_d['form'], req_d['files'] = form, files
 
         env_data = cgi.FieldStorage(self.get_stream, environ=environ,
                 keep_blank_values=True)
         
         if not env_data:
-            return None
+            return form
 
         for k in env_data.list:
             # NOTE: Perhaps add support application/x-www-form-urlencoded
             # in the future.
             if isinstance(k, cgi.MiniFieldStorage):
-                return None
+                return form
 
             if k.filename:
                 headers = dict(k.headers)
@@ -175,9 +176,6 @@ class Request(object):
                 files[k.name] = filewrapper
             else:
                 form[k.name] = k.value
-
-        req_d = self.__dict__
-        req_d['form'], req_d['files'] = form, files
 
         return form
 
@@ -206,22 +204,19 @@ class Request(object):
         self.stream.seek(0)
         return self.stream
 
-    @property
-    def json_data(self):
+    @cached_property
+    def json(self):
         """If the mimetype is application/json, parse self.data and
         return a python dictionary"""
+
+        if not self.data:
+            return None
+    
         if not 'application/json' in self.mimetype:
             return None
-        
-        # If the data has already been parsed we return the
-        # cached version. If no cache exists we parse it,
-        # cache it in self.json and return the dict
-        if isinstance(self.json, dict):
-            return self.json
-
+       
         try:
             data = json.loads(self.data)
-            self.json = data
         except ValueError:
             return None
 

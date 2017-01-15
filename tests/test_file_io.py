@@ -101,13 +101,21 @@ def test_save_file(req, monkeypatch, file_environ):
     assert mock_open.called
 
 
-def test_seek_file(req, file_environ):
+def test_file_readline():
+    stream = 'This is one line\nThis is anoter\nAnd a third'
+    f = FileWrapper(stream)
+    assert f.readline() == 'This is one line\n'
+    f.close()
+
+
+def test_seek_file():
     stream = 'This is a binary string'
     f = FileWrapper(stream)
     f.seek(10)
     assert f.read() == 'binary string'
     f.seek(0)
     assert f.read() == stream
+    f.close()
 
 
 def test_close_filewrapper(req, monkeypatch):

@@ -37,6 +37,22 @@ decorate, called "index" is responsible for generating the data we want
 to return back to the user ("Hello World").
 
 
+View some output
+----------------
+
+To view the fruits of our labour we will need a few more lines. Add the
+following to the end of your file and save it as my_app.py. ::
+
+    if __name__ == '__main__':
+        app.run()
+
+This tells your application to run a simple server if executed by the
+Python interpreter. Go to the location of my_app.py and run
+``python my_app.py``. It will now tell you that your app is running on
+http://127.0.0.1:5000/, just visit that URL in a browser and you should
+see the 'Hello World' message.
+
+
 Basic Routing
 -------------
 
@@ -152,15 +168,25 @@ Supported methods for the request object are:
 ``request.headers``
     Returns the request headers as a dictionary.
 
+``request.cookies``
+    Returns any cookies parsed by the response object.
+
+``request.mimetype``
+    Returns the mimetype parsed from the request Content-Type. Options are
+    returned in request.options.
+
+``request.options``
+    Returns any options parsed from the request Content-Type.
+
 ``request.query``
     Returns keys and values from a query string as a dictionary.
 
 ``request.data``
     Returns raw post data as a string or form data as a dictionary.
 
-``request.json_data``
+``request.json``
     Returns the request data as a dictionary. Requires the data to be
-    valid json and the content-type to be application/json, if not it
+    valid json and the mimetype to be application/json, if not it will
     return None.
 
 ``request.files``
@@ -168,8 +194,17 @@ Supported methods for the request object are:
     dictionary. The key is the name of the file and the value a PWF
     FileWrapper object.
 
+``request.form``
+    Holds the parsed form data from a POST request. Empty if no
+    form data was parsed.
+
 ``request.stream``
-    Returns a cached version of the wsgi.input stream. 
+    Returns a cached version of the wsgi.input stream as a temporary file
+    reference or BytesIO object.
+
+``request.get_stream()``
+    Same as request.stream but we seek to position 0 before
+    returning the stream object.
 
 ``request.environ``
     Returns the raw WSGI environ dict.
@@ -356,7 +391,7 @@ These are the config variables currently supported:
                                   will be available. If set to false Pwf
                                   returns a standard 500 Internal Server
                                   Error response code if the application
-                                  failes.
+                                  fails.
 ================================= =========================================
 
 
@@ -407,7 +442,7 @@ Example: ::
 
     @app.route('/binary-upload', methods=['POST'])
     def upload(request):
-        binary = request.stream
+        binary = request.get_stream
         filename = 'my_file.png'
 
         my_file = FileWrapper(binary, filename=filename, content_type='image/png')

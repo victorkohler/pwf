@@ -7,6 +7,7 @@
 Implements a set of utilities used throughout Pwf but some
 might be useful to use in other circumstances as well.
 """
+import logging
 
 
 class cached_property(property):
@@ -30,15 +31,16 @@ class cached_property(property):
 
     def __init__(self, func, name=None, doc=None):
         self.__name__ = func.__name__
-        self.__module__ = func.__module__
-        self.__doc__ = func.__doc__
+        #self.__module__ = func.__module__
+        #self.__doc__ = func.__doc__
         self.func = func
 
     def __set__(self, obj, value):
+        print obj
         obj.__dict__[self.__name__] = value
 
     def __get__(self, obj, type=None):
-        if obj is None:
+        if obj is None: # pragma: no cover
             return self
 
         value = obj.__dict__.get(self.__name__, None)
@@ -46,3 +48,12 @@ class cached_property(property):
             value = self.func(obj)
             obj.__dict__[self.__name__] = value
         return value
+
+
+
+def log(info):
+    """TODO: Implement a real loggin solution"""
+    print info
+
+
+

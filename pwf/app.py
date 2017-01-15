@@ -12,7 +12,8 @@ from response import Response
 from functools import wraps
 from stack import _app_stack
 from exceptions import HTTPException, MethodNotAllowed, NotFound, InternalError
-
+from utils import log
+import wsgiref.simple_server
 
 
 class Pwf(object):
@@ -41,6 +42,14 @@ class Pwf(object):
         self.last_funcs = {}
         self.errorhandlers = {}
         _app_stack.push(self)
+    
+    def run(self, host='127.0.0.1', port=5000):
+        """Serves the PWF app using the wsgiref simple server. Use this
+        only for quick testing in development.
+        """
+        httpd = wsgiref.simple_server.make_server('', port, self)
+        log("PWF now running on http://%s:%s/" % (host, port,))
+        httpd.serve_forever()
 
     def build_route_pattern(self, url):
         """Regex to find path variables in path"""

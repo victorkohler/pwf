@@ -21,13 +21,13 @@ class FileWrapper(object):
     it like a file object.
     """
 
-    def __init__(self, filestream, filename=None, name=None,
+    def __init__(self, file, filename=None, name=None,
                  mimetype=None, headers=None):
 
-        if isinstance(filestream, str):
-            self.filestream = BytesIO(filestream)
+        if isinstance(file, str):
+            self.file = BytesIO(file)
         else:
-            self.filestream = filestream
+            self.file = file
 
         self.filename = filename
         self.name = name
@@ -52,31 +52,29 @@ class FileWrapper(object):
         if isinstance(dest, (str, unicode)):
             dest = open(dest, 'wb')
         try:
-            shutil.copyfileobj(self.filestream, dest, self.buffer_size)
+            shutil.copyfileobj(self.file, dest, self.buffer_size)
         finally:
             dest.close()
 
     def seek(self, pos):
         """Seek the file to the specified position (pos)"""
-        self.filestream.seek(pos)
+        self.file.seek(pos)
 
     def read(self, length=-1):
         """Read the file to the specified length or EOF"""
-        return self.filestream.read(length)
+        return self.file.read(length)
         
     def close(self):
         """Close the file. If you try to access the FileWrapper
         object after it's been closed it will raise an ValueError.
         """
         try:
-            self.filestream.close()
+            self.file.close()
         except Exception:
             pass
 
     def readline(self):
-        #TODO: Should be used on filestream directly, rather than a function?
-        # Also rename filestream to file?
-        return self.filestream.readline()
+        return self.file.readline()
 
 
 class Config(dict):

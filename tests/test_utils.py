@@ -15,9 +15,10 @@ import random
 
 from pwf.request import Request
 from pwf.wrappers import FileWrapper
-from pwf.utils import cached_property
+from pwf.utils import cached_property, log
 from mocks.environ import CreateEnviron
 from mocks.builtin import MockOpen
+
 
 def test_cached_property():
    
@@ -33,3 +34,8 @@ def test_cached_property():
 
     assert value_one == value_two
 
+
+def test_log(capsys):
+    log('Testing')
+    out, err = capsys.readouterr()
+    assert out == 'Testing\n'
