@@ -6,6 +6,7 @@
 """
 
 import re
+import traceback
 from wrappers import Config
 from request import Request
 from response import Response
@@ -203,7 +204,7 @@ class Pwf(object):
 
         if route_match:
             kwargs, methods, group, view_function = route_match
-
+            
             #: Execute any first functions for route group
             first_group_rv = self.__execute_first_groups(request, group)
             if first_group_rv is not None:
@@ -251,7 +252,7 @@ class Pwf(object):
         but just re-raise it again.
         """
         if self.config.get('DEBUG', None):
-            raise e
+            traceback.print_exc()
 
         if isinstance(e, (NotFound, MethodNotAllowed)):
             rv = self.__error_return(make_response, e.respcode)
