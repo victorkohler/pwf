@@ -22,8 +22,8 @@ The simplest case
 The most basic thing you can do with PWF is to recive a GET request
 and return some text back to the user. For this, all you need is: ::
     
-    from pwf.app import App()
-    app = App()
+    from pwf.app import Pwf()
+    app = Pwf()
 
     @app.route('/')
     def index(request):
