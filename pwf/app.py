@@ -252,7 +252,7 @@ class Pwf(object):
         but just re-raise it again.
         """
         if self.config.get('DEBUG', None):
-            traceback.print_exc()
+            traceback.print_exc() # pragma: no cover
 
         if isinstance(e, (NotFound, MethodNotAllowed)):
             rv = self.__error_return(make_response, e.respcode)

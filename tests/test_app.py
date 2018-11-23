@@ -266,17 +266,6 @@ def test_config(app):
     assert app.config['DEBUG']
 
 
-def test_debug_mode(app, environ):
-    app.config['DEBUG'] = True
-    
-    @app.route('/')
-    def index(r):
-        return unknown_variable
-
-    with pytest.raises(NameError) as error:
-        render_data = fake_request('/', app, environ)
-
-
 def test_config_from_json(app):
     app.config.from_json_file('/var/www/pwf/tests/config.json')
     assert app.config['DEBUG']
