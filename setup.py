@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pwf',
-    version='0.1.0',
+    version='0.2.0',
     description='A Python Web Framework',
     long_description='',
     url='https://github.com/victorkohler/pwf',

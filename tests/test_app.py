@@ -117,6 +117,18 @@ def test_json_return(app, environ):
     assert render_data == '{"success": true}'
 
 
+def test_view_exception(app, environ):
+    @app.route('/exception')
+    def view_exception(r):
+        try:
+            a = 1/0
+        except ZeroDivisionError:
+            return "The expression has no meaning"
+
+    render_data = fake_request('/exception', app, environ)
+    assert render_data == 'The expression has no meaning'
+
+
 def test_first(app, environ):
     @app.route('/')
     def view_func(r):
